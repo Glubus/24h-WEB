@@ -8,6 +8,7 @@ import { MyAccountPage } from './page/MyAccountPage'
 import { CreateAnnoncePage } from './page/CreateAnnoncePage'
 import { ChatPage } from './page/ChatPage'
 import { Navbar } from './components/Navbar'
+import { FloatingChat } from './components/FloatingChat'
 import { api } from './services/api'
 import type { User } from './services/api'
 import type { Page } from './types/page'
@@ -70,6 +71,7 @@ function App() {
           <LoginPage onLogin={setCurrentUser} onNavigate={setPage} />
         )}
       </div>
+      <FloatingChat onNavigateAnnonce={navigateToAnnonce} />
     </>
   )
 }

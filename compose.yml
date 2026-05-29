@@ -52,6 +52,27 @@ services:
       - database
     networks:
       - network
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: ./build/fastapi/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME}-fastapi
+    container_name: ${COMPOSE_PROJECT_NAME}-fastapi
+    volumes:
+      - type: bind
+        source: ./fastapi
+        target: /app
+    ports:
+      - 9000:9000
+    environment:
+      SYMFONY_API_URL: http://nginx/api
+      VLLM_BASE_URL: ${VLLM_BASE_URL:-http://host.docker.internal:8000/v1}
+      VLLM_MODEL: ${VLLM_MODEL:-Qwen/Qwen2.5-32B-Instruct}
+    depends_on:
+      - nginx
+    networks:
+      - network
   database:
     build:
       context: .
