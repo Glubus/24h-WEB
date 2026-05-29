@@ -38,7 +38,7 @@ services:
   sfapi:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: build/sfapi/prod/Dockerfile
     image: ${COMPOSE_PROJECT_NAME}-sfapi
     container_name: ${COMPOSE_PROJECT_NAME}-sfapi
     depends_on:

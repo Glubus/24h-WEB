@@ -33,7 +33,8 @@ RUN if [ ! -z ${USER_NAME} ] && [ ! -z ${GROUP_NAME} ] && [ ${USER_ID:-0} -ne 0 
 COPY ./sfapi ./
 
 # Install PHP dependencies (including dev dependencies for MonologBundle)
-RUN composer install --optimize-autoloader --no-interaction
+RUN DATABASE_URL=sqlite:///:memory: APP_SECRET=placeholder SENTRY_DSN= \
+    composer install --no-dev --optimize-autoloader --no-interaction
 
 # Build assets (if any)
 RUN php bin/console assets:install --no-interaction
