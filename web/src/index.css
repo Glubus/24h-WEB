@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-@plugin "daisyui";
+@plugin "daisyui" {
+    themes: cupcake --default;
+}
 
 :root {
   --sans: system-ui, "Segoe UI", roboto, sans-serif;

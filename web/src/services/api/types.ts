@@ -43,6 +43,20 @@ export type LoginResponse = {
 };
 
 export type User = JsonLdResource & {
+  id?: number
+  email?: string
+  username: string
+  roles?: string[]
+  phone?: string | null
+  profileImagePath?: string | null
+  rating?: number | null
+  successfulSaleCount?: number
+  annonces?: ApiIri[]
+  purchasedAnnonces?: ApiIri[]
+  ratedAnnonces?: ApiIri[]
+  favoriteAnnonces?: ApiIri[]
+  userIdentifier?: string
+}
   id?: number;
   email?: string;
   username: string;

@@ -1,3 +1,6 @@
+import type { AnnonceCategory } from '../../services/api'
+import type { ImagePreview } from './ImagePicker'
+import { CategoryDisplay } from '../CategoryDisplay'
 import type { AnnonceCategory } from "../../services/api";
 import type { ImagePreview } from "./ImagePicker";
 import { categoryLabel } from "./createAnnonceOptions";
@@ -55,6 +58,9 @@ export function AnnoncePreview({
           </p>
           <div className="mt-4 flex items-center justify-between">
             <span className="badge badge-outline">
+              <CategoryDisplay category={category} iconClassName="h-3.5 w-3.5" />
+            </span>
+            <span className="text-xs text-base-content/50">{imagePreviews.length} image(s)</span>
               {categoryLabel(category)}
             </span>
             <span className="text-xs text-base-content/50">

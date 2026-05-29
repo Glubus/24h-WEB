@@ -1,3 +1,16 @@
+import { useState, useEffect } from 'react'
+import { api } from '../services/api'
+import type { AnnonceFilters, AnnonceListItem } from '../services/api'
+
+export function useAnnonces(filters: AnnonceFilters = {}) {
+  const [annonces, setAnnonces] = useState<AnnonceListItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const filtersKey = JSON.stringify(filters)
+
+  useEffect(() => {
+    let cancelled = false
+    const activeFilters = JSON.parse(filtersKey) as AnnonceFilters
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
 import type { AnnonceListItem } from "../services/api";
@@ -15,6 +28,8 @@ export function useAnnonces(category?: string) {
       setError(null);
 
       try {
+        const result = await api.listAnnonces(activeFilters)
+        if (!cancelled) setAnnonces(result.member)
         const result = await api.listAnnonces(
           category ? { categories: category as never } : {},
         );
@@ -27,6 +42,9 @@ export function useAnnonces(category?: string) {
     })();
 
     return () => {
+      cancelled = true
+    }
+  }, [filtersKey])
       cancelled = true;
     };
   }, [category]);

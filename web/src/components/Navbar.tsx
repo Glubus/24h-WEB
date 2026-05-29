@@ -1,3 +1,24 @@
+import type { Page } from '../types/page'
+import type { User } from '../services/api'
+import { userPictureUrl } from '../services/api/assets'
+import { useCategories } from '../hooks/useCategories'
+import { formatUsername } from '../utils/formatUsername'
+import { CategoryDisplay } from './CategoryDisplay'
+
+type NavbarProps = {
+  currentUser: User | null
+  onDiscover: () => void
+  onLogout: () => void
+  onNavigate: (page: Page) => void
+  onNavigateCategory: (category: string) => void
+}
+
+export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNavigateCategory }: NavbarProps) {
+  const initial = currentUser?.username.charAt(0).toUpperCase() ?? '?'
+  const displayUsername = formatUsername(currentUser?.username)
+  const profileImageUrl = currentUser?.id === undefined ? null : userPictureUrl(currentUser.id)
+  const { categories } = useCategories()
+  const displayCategories = currentUser === null ? categories : ['favorites', ...categories]
 import type { Page } from "../types/page";
 import { SearchBar } from "./SearchBar.tsx";
 import type { User } from "../services/api";
@@ -43,6 +64,9 @@ export function Navbar({
 
         <div>
           <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={onDiscover}
             type="button"
             className="btn btn-ghost"
             onClick={() => onNavigate("home")}
@@ -106,11 +130,18 @@ export function Navbar({
                   {displayUsername}
                 </span>
               </button>
-              <ul
-                className="menu dropdown-content z-[1] mt-3 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow"
-                tabIndex={0}
-              >
+	              <ul
+	                className="menu dropdown-content z-[1] mt-3 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow"
+	                tabIndex={0}
+	              >
                 <li>
+                  <button type="button" onClick={() => onNavigate('myAnnonces')}>
+                    Mes annonces
+                  </button>
+                </li>
+	                <li>
+	                  <button type="button" onClick={() => onNavigate('settingsUser')}>
+	                    Paramètres
                   <button
                     type="button"
                     onClick={() => onNavigate("settingsUser")}
@@ -129,13 +160,14 @@ export function Navbar({
         </div>
       </div>
       <div className="w-full">
+        {displayCategories.map(category => (
         {categories.map((category) => (
           <button
             key={category}
             className="btn btn-sm btn-ghost"
             onClick={() => onNavigateCategory(category)}
           >
-            {category}
+            <CategoryDisplay category={category} />
           </button>
         ))}
       </div>

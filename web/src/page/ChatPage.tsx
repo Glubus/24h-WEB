@@ -12,6 +12,29 @@ import type { Page } from "../types/page";
 import { formatUsername } from "../utils/formatUsername";
 
 type ChatPageProps = {
+  currentUser: User | null
+  initialConversationId: number | null
+  onNavigate: (page: Page) => void
+  onNavigateAnnonce: (id: number) => void
+}
+
+export function ChatPage({ currentUser, initialConversationId, onNavigate, onNavigateAnnonce }: ChatPageProps) {
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [annonces, setAnnonces] = useState<AnnonceListItem[]>([])
+  const [content, setContent] = useState('')
+  const [linkedAnnonce, setLinkedAnnonce] = useState<AnnonceListItem | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const selectedConversation = conversations.find((conversation) => conversation.id === selectedConversationId) ?? null
+  const selectedOtherUser = selectedConversation === null || currentUser === null ? null : otherParticipant(selectedConversation, currentUser)
+  const linkableAnnonces = selectedConversation === null
+    ? []
+    : annonces.filter((annonce) => {
+        const id = annonceAuthorId(annonce)
+
+        return id === selectedConversation.userOne.id || id === selectedConversation.userTwo.id
+      })
   currentUser: User | null;
   initialConversationId: number | null;
   onNavigate: (page: Page) => void;
@@ -320,6 +343,10 @@ export function ChatPage({
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.map((message) => {
+              const isMine = message.author.id === currentUser.id
+              const embeddedAnnonce = message.annonce === null || message.annonce === undefined || typeof message.annonce === 'string'
+                ? null
+                : message.annonce
               const isMine = message.author.id === currentUser.id;
 
               return (
@@ -340,6 +367,20 @@ export function ChatPage({
                     className={`chat-bubble ${message.deleted ? "opacity-60" : ""}`}
                   >
                     {message.content}
+                    {embeddedAnnonce === null ? null : (
+                      <button
+                        type="button"
+                        className="mt-3 flex w-full gap-3 rounded bg-base-100/20 p-2 text-left text-sm transition hover:bg-base-100/30"
+                        onClick={() => onNavigateAnnonce(embeddedAnnonce.id)}
+                      >
+                        <img
+                          className="h-14 w-16 rounded object-cover"
+                          src={embeddedAnnonce.images.length > 0 ? annonceImageUrl(embeddedAnnonce.id) : undefined}
+                          alt={embeddedAnnonce.title}
+                        />
+                        <div>
+                          <div className="font-semibold">{embeddedAnnonce.title}</div>
+                          <div>{embeddedAnnonce.price} EUR</div>
                     {message.annonce === null ||
                     message.annonce === undefined ||
                     typeof message.annonce === "string" ? null : (
@@ -359,7 +400,7 @@ export function ChatPage({
                           </div>
                           <div>{message.annonce.price} EUR</div>
                         </div>
-                      </div>
+                      </button>
                     )}
                   </div>
                   {message.deleted ? null : (
@@ -376,12 +417,13 @@ export function ChatPage({
             })}
           </div>
 
+          <form className="flex w-full flex-col gap-2 border-t border-base-300 p-4 md:flex-row" onSubmit={handleSendMessage}>
           <form
             className="grid gap-2 border-t border-base-300 p-4 md:grid-cols-[1fr_auto_auto]"
             onSubmit={handleSendMessage}
           >
             <input
-              className="input input-bordered"
+              className="input input-bordered w-full flex-1"
               onChange={(event) => setContent(event.target.value)}
               placeholder="Message"
               value={content}

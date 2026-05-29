@@ -1,3 +1,4 @@
+export { annonceCategories, categoryLabel } from '../../utils/categoryLabels'
 import type { AnnonceCategory } from "../../services/api";
 
 export const annonceCategories: Array<{
