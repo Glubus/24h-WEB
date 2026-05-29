@@ -16,6 +16,10 @@ use App\Enum\AnnonceCategory;
 use App\State\AnnoncePersistProcessor;
 use App\State\AnnonceMaskedSwitchProcessor;
 use App\State\AnnonceImageUploadProcessor;
+use App\State\AnnonceImageDeleteProcessor;
+use App\State\AnnonceFavoriteToggleProcessor;
+use App\State\ConversationFromAnnonceProcessor;
+use App\State\SellerRatingProcessor;
 use App\Repository\AnnonceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -29,7 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             uriTemplate: '/annonces',
-            normalizationContext: ['groups' => ['annonce:list']],
+            normalizationContext: ['groups' => ['annonce:list', 'user:summary']],
         ),
         new Post(
             uriTemplate: '/annonces',
@@ -38,16 +42,16 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             uriTemplate: '/annonces/{id}',
-            normalizationContext: ['groups' => ['annonce:read']],
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
         ),
         new Get(
             uriTemplate: '/annonces/{id}/edit',
             normalizationContext: ['groups' => ['annonce:read', 'annonce:edit']],
-            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
         ),
         new Patch(
             uriTemplate: '/annonces/{id}',
-            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
             securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
             processor: AnnoncePersistProcessor::class,
         ),
@@ -62,11 +66,37 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
             processor: AnnonceImageUploadProcessor::class,
         ),
+        new Delete(
+            uriTemplate: '/annonces/{id}/images/{imageIndex}',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            processor: AnnonceImageDeleteProcessor::class,
+        ),
         new Post(
             uriTemplate: '/annonces/{id}/masked',
             deserialize: false,
             security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
             processor: AnnonceMaskedSwitchProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/conversation',
+            deserialize: false,
+            normalizationContext: ['groups' => ['conversation:read', 'user:read']],
+            security: 'is_granted("ROLE_USER")',
+            processor: ConversationFromAnnonceProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/favorite',
+            deserialize: false,
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            security: 'is_granted("ROLE_USER")',
+            processor: AnnonceFavoriteToggleProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/rate-seller',
+            deserialize: false,
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            security: 'is_granted("ROLE_USER")',
+            processor: SellerRatingProcessor::class,
         ),
     ],
     normalizationContext: ['groups' => ['annonce:read']],
@@ -95,9 +125,17 @@ class Annonce
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?User $author = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read'])]
-    private ?string $imagePath = null;
+    #[ORM\ManyToOne(inversedBy: 'purchasedAnnonces')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:edit', 'annonce:write'])]
+    private ?User $buyer = null;
+
+    /**
+     * @var list<string>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    private array $images = [];
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['annonce:edit', 'annonce:write'])]
@@ -126,6 +164,15 @@ class Annonce
     #[ApiFilter(BooleanFilter::class)]
     private bool $masked = false;
 
+    #[ORM\Column]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[ApiFilter(BooleanFilter::class)]
+    private bool $sold = false;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    private ?\DateTimeImmutable $soldAt = null;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?string $latitude = null;
@@ -151,7 +198,7 @@ class Annonce
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'favoriteAnnonces')]
     #[ORM\JoinTable(name: 'annonce_favorite')]
-    #[Groups(['annonce:read', 'annonce:edit'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:edit'])]
     private Collection $favorites;
 
     public function __construct()
@@ -213,14 +260,51 @@ class Annonce
         return $this;
     }
 
-    public function getImagePath(): ?string
+    public function getBuyer(): ?User
     {
-        return $this->imagePath;
+        return $this->buyer;
     }
 
-    public function setImagePath(?string $imagePath): static
+    public function setBuyer(?User $buyer): static
     {
-        $this->imagePath = $imagePath;
+        $this->buyer = $buyer;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getImages(): array
+    {
+        return $this->images;
+    }
+
+    /**
+     * @param list<string> $images
+     */
+    public function setImages(array $images): static
+    {
+        $this->images = array_values($images);
+
+        return $this;
+    }
+
+    public function addImage(string $image): static
+    {
+        $this->images[] = $image;
+
+        return $this;
+    }
+
+    public function removeImageAt(int $imageIndex): static
+    {
+        if (!array_key_exists($imageIndex, $this->images)) {
+            throw new \OutOfBoundsException('Image index does not exist.');
+        }
+
+        unset($this->images[$imageIndex]);
+        $this->images = array_values($this->images);
 
         return $this;
     }
@@ -309,6 +393,39 @@ class Annonce
         return $this;
     }
 
+    public function isSold(): bool
+    {
+        return $this->sold;
+    }
+
+    public function setSold(bool $sold): static
+    {
+        if ($sold && !$this->sold && null === $this->soldAt) {
+            $this->soldAt = new \DateTimeImmutable();
+        }
+
+        if (!$sold) {
+            $this->soldAt = null;
+            $this->buyer = null;
+        }
+
+        $this->sold = $sold;
+
+        return $this;
+    }
+
+    public function getSoldAt(): ?\DateTimeImmutable
+    {
+        return $this->soldAt;
+    }
+
+    public function setSoldAt(?\DateTimeImmutable $soldAt): static
+    {
+        $this->soldAt = $soldAt;
+
+        return $this;
+    }
+
     public function getLatitude(): ?string
     {
         return $this->latitude;
@@ -378,6 +495,12 @@ class Annonce
     public function getFavorites(): Collection
     {
         return $this->favorites;
+    }
+
+    #[Groups(['annonce:list', 'annonce:read'])]
+    public function getFavoriteCount(): int
+    {
+        return $this->favorites->count();
     }
 
     public function addFavorite(User $user): static

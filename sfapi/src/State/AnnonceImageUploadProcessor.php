@@ -56,7 +56,7 @@ final class AnnonceImageUploadProcessor implements ProcessorInterface
 
         $image->move($uploadDir, $filename);
 
-        $data->setImagePath('/uploads/annonces/'.$filename);
+        $data->addImage('/uploads/annonces/'.$filename);
         $this->entityManager->flush();
 
         return $data;

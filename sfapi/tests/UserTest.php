@@ -86,6 +86,61 @@ class UserTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
+    public function testUserSummaryIsPublicAndDoesNotExposePrivateFields(): void
+    {
+        $user = UserFactory::createOne([
+            'email' => 'summary@example.com',
+            'phone' => '+33123456789',
+            'rating' => 4.5,
+            'username' => 'summary-user',
+        ]);
+
+        $response = static::createClient()->request('GET', '/api/users/'.$user->getId().'/summary');
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame($user->getId(), $data['id']);
+        $this->assertSame('summary-user', $data['username']);
+        $this->assertSame(4.5, $data['rating']);
+        $this->assertArrayHasKey('successfulSaleCount', $data);
+        $this->assertArrayNotHasKey('email', $data);
+        $this->assertArrayNotHasKey('phone', $data);
+    }
+
+    public function testWhoamiRequiresToken(): void
+    {
+        static::createClient()->request('GET', '/api/me');
+
+        $this->assertResponseStatusCodeSame(401);
+    }
+
+    public function testWhoamiReturnsAuthenticatedUser(): void
+    {
+        $user = UserFactory::createOne([
+            'email' => 'me@example.com',
+            'phone' => '+33123456789',
+            'rating' => 4.5,
+            'username' => 'me-user',
+        ]);
+        $token = ApiTokenFactory::createOne([
+            'ownedBy' => $user,
+            'scopes' => [ApiToken::SCOPE_USER_EDIT],
+        ]);
+
+        static::createClient()->request('GET', '/api/me', [
+            'headers' => $this->authorizationHeaders($token),
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'id' => $user->getId(),
+            'email' => 'me@example.com',
+            'phone' => '+33123456789',
+            'rating' => 4.5,
+            'username' => 'me-user',
+        ]);
+    }
+
     public function testUserReadWithTokenDoesNotExposeSensitiveFields(): void
     {
         $user = UserFactory::createOne([
@@ -140,6 +195,36 @@ class UserTest extends ApiTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSame(['/api/annonces/'.$ratedAnnonce->getId()], $data['ratedAnnonces']);
         $this->assertSame(['/api/annonces/'.$favoriteAnnonce->getId()], $data['favoriteAnnonces']);
+    }
+
+    public function testUserPictureCanBeReadThroughApiRoute(): void
+    {
+        $user = UserFactory::createOne(['username' => 'picture-user']);
+        $projectDir = static::getContainer()->getParameter('kernel.project_dir');
+        $uploadDir = $projectDir.'/public/uploads/users';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+
+        $filename = 'test-user-picture-'.bin2hex(random_bytes(4)).'.txt';
+        $path = $uploadDir.'/'.$filename;
+        file_put_contents($path, 'picture-content');
+
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $managedUser = $entityManager->find(User::class, $user->getId());
+        $managedUser->setProfileImagePath('/uploads/users/'.$filename);
+        $entityManager->flush();
+
+        try {
+            $response = static::createClient()->request('GET', '/api/users/'.$user->getId().'/pictures');
+
+            $this->assertResponseIsSuccessful();
+            $this->assertSame('picture-content', $response->getContent());
+        } finally {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
     }
 
     public function testUserProfilePatchRequiresToken(): void
