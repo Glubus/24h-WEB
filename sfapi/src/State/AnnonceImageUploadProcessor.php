@@ -8,12 +8,12 @@ use App\Entity\Annonce;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
- * @implements ProcessorInterface<Annonce, Annonce>
+ * @implements ProcessorInterface<mixed, Annonce>
  */
 final class AnnonceImageUploadProcessor implements ProcessorInterface
 {

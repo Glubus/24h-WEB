@@ -33,7 +33,7 @@ class Conversation
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['conversation:read', 'message:read'])]
-    private ?int $id = null;
+    private int $id = 0;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -63,7 +63,7 @@ class Conversation
 
     public function getId(): ?int
     {
-        return $this->id;
+        return 0 === $this->id ? null : $this->id;
     }
 
     public function getUserOne(): ?User

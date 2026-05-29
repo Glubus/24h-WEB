@@ -12,7 +12,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
- * @implements ProcessorInterface<Annonce, Conversation>
+ * @implements ProcessorInterface<mixed, Conversation>
  */
 final class ConversationFromAnnonceProcessor implements ProcessorInterface
 {

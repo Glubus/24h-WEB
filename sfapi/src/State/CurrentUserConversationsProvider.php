@@ -20,6 +20,9 @@ final class CurrentUserConversationsProvider implements ProviderInterface
     ) {
     }
 
+    /**
+     * @return list<Conversation>
+     */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array
     {
         $user = $this->security->getUser();

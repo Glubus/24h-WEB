@@ -1,53 +1,63 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
-import { AnnoncePreview } from '../components/createAnnonce/AnnoncePreview'
-import { CreateAnnonceFields } from '../components/createAnnonce/CreateAnnonceFields'
-import { api } from '../services/api'
-import type { AnnonceCategory, User } from '../services/api'
-import type { Page } from '../types/page'
+import { useEffect, useMemo, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { AnnoncePreview } from "../components/createAnnonce/AnnoncePreview";
+import { CreateAnnonceFields } from "../components/createAnnonce/CreateAnnonceFields";
+import { api } from "../services/api";
+import type { AnnonceCategory, User } from "../services/api";
+import type { Page } from "../types/page";
 
 type CreateAnnoncePageProps = {
-  currentUser: User | null
-  onNavigate: (page: Page) => void
-}
+  currentUser: User | null;
+  onNavigate: (page: Page) => void;
+};
 
-export function CreateAnnoncePage({ currentUser, onNavigate }: CreateAnnoncePageProps) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [price, setPrice] = useState('')
-  const [category, setCategory] = useState<AnnonceCategory>('home')
-  const [city, setCity] = useState('')
-  const [address, setAddress] = useState('')
-  const [images, setImages] = useState<File[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+export function CreateAnnoncePage({
+  currentUser,
+  onNavigate,
+}: CreateAnnoncePageProps) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [category, setCategory] = useState<AnnonceCategory>("home");
+  const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const imagePreviews = useMemo(
-    () => images.map((image) => ({ name: image.name, url: URL.createObjectURL(image) })),
+    () =>
+      images.map((image) => ({
+        name: image.name,
+        url: URL.createObjectURL(image),
+      })),
     [images],
-  )
+  );
 
-  useEffect(() => () => {
-    for (const image of imagePreviews) {
-      URL.revokeObjectURL(image.url)
-    }
-  }, [imagePreviews])
+  useEffect(
+    () => () => {
+      for (const image of imagePreviews) {
+        URL.revokeObjectURL(image.url);
+      }
+    },
+    [imagePreviews],
+  );
 
   function handleImagesChange(event: ChangeEvent<HTMLInputElement>) {
-    setImages(Array.from(event.target.files ?? []))
+    setImages(Array.from(event.target.files ?? []));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setSuccess(null)
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
 
     if (currentUser?.id === undefined) {
-      setError('Connectez-vous pour déposer une annonce.')
-      return
+      setError("Connectez-vous pour déposer une annonce.");
+      return;
     }
 
-    setIsSaving(true)
+    setIsSaving(true);
 
     try {
       const createdAnnonce = await api.createAnnonce({
@@ -61,24 +71,28 @@ export function CreateAnnoncePage({ currentUser, onNavigate }: CreateAnnoncePage
         masked: false,
         sold: false,
         images: [],
-      })
+      });
 
       for (const image of images) {
-        await api.uploadAnnonceImage(createdAnnonce.id, image)
+        await api.uploadAnnonceImage(createdAnnonce.id, image);
       }
 
-      setTitle('')
-      setDescription('')
-      setPrice('')
-      setCategory('home')
-      setCity('')
-      setAddress('')
-      setImages([])
-      setSuccess('Annonce créée.')
+      setTitle("");
+      setDescription("");
+      setPrice("");
+      setCategory("home");
+      setCity("");
+      setAddress("");
+      setImages([]);
+      setSuccess("Annonce créée.");
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : 'Création impossible.')
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Création impossible.",
+      );
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
@@ -87,21 +101,32 @@ export function CreateAnnoncePage({ currentUser, onNavigate }: CreateAnnoncePage
       <main className="mx-auto max-w-xl py-16">
         <div className="rounded-lg border border-base-300 bg-base-100 p-6">
           <h1 className="text-2xl font-bold">Déposer une annonce</h1>
-          <p className="mt-2 text-base-content/70">Connectez-vous pour créer une annonce.</p>
-          <button type="button" className="btn btn-primary mt-6" onClick={() => onNavigate('login')}>
+          <p className="mt-2 text-base-content/70">
+            Connectez-vous pour créer une annonce.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary mt-6"
+            onClick={() => onNavigate("login")}
+          >
             Connexion
           </button>
         </div>
       </main>
-    )
+    );
   }
 
   return (
     <main className="py-10">
-      <form className="mx-auto max-w-3xl rounded-lg border border-base-300 bg-base-100 p-6 shadow-sm" onSubmit={handleSubmit}>
+      <form
+        className="mx-auto max-w-3xl rounded-lg border border-base-300 bg-base-100 p-6 shadow-sm"
+        onSubmit={handleSubmit}
+      >
         <div className="border-b border-base-300 pb-5">
           <h1 className="text-2xl font-bold">Déposer une annonce</h1>
-          <p className="mt-1 text-sm text-base-content/60">Ajoutez les informations principales du produit.</p>
+          <p className="mt-1 text-sm text-base-content/60">
+            Ajoutez les informations principales du produit.
+          </p>
         </div>
 
         {error === null ? null : (
@@ -134,11 +159,21 @@ export function CreateAnnoncePage({ currentUser, onNavigate }: CreateAnnoncePage
         />
 
         <div className="mt-7 flex justify-end gap-3">
-          <button type="button" className="btn btn-ghost" onClick={() => onNavigate('home')}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => onNavigate("home")}
+          >
             Annuler
           </button>
-          <button type="submit" className="btn btn-primary min-w-44" disabled={isSaving}>
-            {isSaving ? <span className="loading loading-spinner loading-sm" /> : null}
+          <button
+            type="submit"
+            className="btn btn-primary min-w-44"
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <span className="loading loading-spinner loading-sm" />
+            ) : null}
             Créer l'annonce
           </button>
         </div>
@@ -153,5 +188,5 @@ export function CreateAnnoncePage({ currentUser, onNavigate }: CreateAnnoncePage
         />
       </form>
     </main>
-  )
+  );
 }

@@ -13,14 +13,14 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Enum\AnnonceCategory;
-use App\State\AnnoncePersistProcessor;
-use App\State\AnnonceMaskedSwitchProcessor;
-use App\State\AnnonceImageUploadProcessor;
-use App\State\AnnonceImageDeleteProcessor;
+use App\Repository\AnnonceRepository;
 use App\State\AnnonceFavoriteToggleProcessor;
+use App\State\AnnonceImageDeleteProcessor;
+use App\State\AnnonceImageUploadProcessor;
+use App\State\AnnonceMaskedSwitchProcessor;
+use App\State\AnnoncePersistProcessor;
 use App\State\ConversationFromAnnonceProcessor;
 use App\State\SellerRatingProcessor;
-use App\Repository\AnnonceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -42,7 +42,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             uriTemplate: '/annonces/{id}',
-            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            normalizationContext: ['groups' => ['annonce:read'], 'iri_only' => true],
         ),
         new Get(
             uriTemplate: '/annonces/{id}/edit',
@@ -51,7 +51,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Patch(
             uriTemplate: '/annonces/{id}',
-            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
             securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
             processor: AnnoncePersistProcessor::class,
         ),
@@ -110,6 +110,7 @@ class Annonce
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['annonce:list', 'annonce:read'])]
+    // @phpstan-ignore-next-line
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -146,7 +147,7 @@ class Annonce
     private ?string $city = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:write'])]
     #[ApiFilter(RangeFilter::class)]
     #[Assert\PositiveOrZero]
     private ?string $price = null;
@@ -174,11 +175,11 @@ class Annonce
     private ?\DateTimeImmutable $soldAt = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:write'])]
     private ?string $latitude = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:write'])]
     private ?string $longitude = null;
 
     #[ORM\Column]
@@ -285,7 +286,7 @@ class Annonce
      */
     public function setImages(array $images): static
     {
-        $this->images = array_values($images);
+        $this->images = $images;
 
         return $this;
     }
@@ -333,9 +334,14 @@ class Annonce
         return $this;
     }
 
+    #[Groups(['annonce:list', 'annonce:read'])]
     public function getPrice(): ?string
     {
-        return $this->price;
+        if (null === $this->price) {
+            return null;
+        }
+
+        return number_format((float) $this->price, 2, '.', '');
     }
 
     public function setPrice(string|float|int $price): static
@@ -358,10 +364,10 @@ class Annonce
      */
     public function setCategories(array $categories): static
     {
-        $this->categories = array_values(array_map(
+        $this->categories = array_map(
             static fn (string|AnnonceCategory $category): string => $category instanceof AnnonceCategory ? $category->value : $category,
             $categories,
-        ));
+        );
 
         return $this;
     }
@@ -426,26 +432,36 @@ class Annonce
         return $this;
     }
 
+    #[Groups(['annonce:list', 'annonce:read'])]
     public function getLatitude(): ?string
     {
-        return $this->latitude;
+        if (null === $this->latitude) {
+            return null;
+        }
+
+        return number_format((float) $this->latitude, 7, '.', '');
     }
 
     public function setLatitude(string|float $latitude): static
     {
-        $this->latitude = (string) $latitude;
+        $this->latitude = number_format((float) $latitude, 7, '.', '');
 
         return $this;
     }
 
+    #[Groups(['annonce:list', 'annonce:read'])]
     public function getLongitude(): ?string
     {
-        return $this->longitude;
+        if (null === $this->longitude) {
+            return null;
+        }
+
+        return number_format((float) $this->longitude, 7, '.', '');
     }
 
     public function setLongitude(string|float $longitude): static
     {
-        $this->longitude = (string) $longitude;
+        $this->longitude = number_format((float) $longitude, 7, '.', '');
 
         return $this;
     }

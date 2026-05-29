@@ -8,20 +8,21 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ApiTokenRepository::class)]
 class ApiToken
 {
-    const PERSONAL_ACCESS_TOKEN_PREFIX = "tcp_";
+    public const PERSONAL_ACCESS_TOKEN_PREFIX = 'tcp_';
 
-    const SCOPE_USER_EDIT = "ROLE_USER_EDIT";
-    const SCOPE_ANNONCE_CREATE = "ROLE_ANNONCE_CREATE";
-    const SCOPE_ANNONCE_EDIT = "ROLE_ANNONCE_EDIT";
-    const SCOPES  = [
-        self::SCOPE_USER_EDIT => "Edit User",
-        self::SCOPE_ANNONCE_CREATE => "Create Annonce",
-        self::SCOPE_ANNONCE_EDIT => "Edit Annonce",
+    public const SCOPE_USER_EDIT = 'ROLE_USER_EDIT';
+    public const SCOPE_ANNONCE_CREATE = 'ROLE_ANNONCE_CREATE';
+    public const SCOPE_ANNONCE_EDIT = 'ROLE_ANNONCE_EDIT';
+    public const SCOPES = [
+        self::SCOPE_USER_EDIT => 'Edit User',
+        self::SCOPE_ANNONCE_CREATE => 'Create Annonce',
+        self::SCOPE_ANNONCE_EDIT => 'Edit Annonce',
     ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    // @phpstan-ignore-next-line
     private ?int $id = null;
 
     #[ORM\Column(length: 68)]
@@ -30,6 +31,9 @@ class ApiToken
     #[ORM\Column]
     private ?\DateTimeImmutable $expiresAt = null;
 
+    /**
+     * @var list<string>
+     */
     #[ORM\Column]
     private array $scopes = [];
 
@@ -37,7 +41,7 @@ class ApiToken
     #[ORM\JoinColumn(nullable: false)]
     private ?User $ownedBy = null;
 
-    public function __construct(string $token_type=self::PERSONAL_ACCESS_TOKEN_PREFIX)
+    public function __construct(string $token_type = self::PERSONAL_ACCESS_TOKEN_PREFIX)
     {
         $this->token = $token_type.bin2hex(random_bytes(32));
     }
@@ -71,11 +75,17 @@ class ApiToken
         return $this;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getScopes(): array
     {
         return $this->scopes;
     }
 
+    /**
+     * @param list<string> $scopes
+     */
     public function setScopes(array $scopes): static
     {
         $this->scopes = $scopes;
@@ -97,6 +107,6 @@ class ApiToken
 
     public function isValid(): bool
     {
-        return $this->expiresAt > new \DateTimeImmutable() && $this->ownedBy !== null;
+        return $this->expiresAt > new \DateTimeImmutable() && null !== $this->ownedBy;
     }
 }

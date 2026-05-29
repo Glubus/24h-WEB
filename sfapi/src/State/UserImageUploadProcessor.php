@@ -13,7 +13,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
- * @implements ProcessorInterface<User, User>
+ * @implements ProcessorInterface<mixed, User>
  */
 final class UserImageUploadProcessor implements ProcessorInterface
 {

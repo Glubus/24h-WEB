@@ -10,7 +10,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * @implements ProcessorInterface<Annonce, Annonce>
+ * @implements ProcessorInterface<mixed, Annonce>
  */
 final class AnnonceImageDeleteProcessor implements ProcessorInterface
 {

@@ -203,6 +203,7 @@ class AppFixtures extends Fixture
     /**
      * @param list<object> $users
      * @param list<string> $images
+     *
      * @return list<array<string, mixed>>
      */
     private function extraAnnonces(array $users, array $images): array
@@ -406,5 +407,4 @@ class AppFixtures extends Fixture
             'annonces' => array_map(static fn (string $filename): string => '/uploads/annonces/'.$filename, array_keys($annonceImages)),
         ];
     }
-
 }
