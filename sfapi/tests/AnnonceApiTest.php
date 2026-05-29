@@ -69,6 +69,41 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertArrayNotHasKey('address', $data['member'][0]);
     }
 
+    public function testPublicAnnonceCollectionHidesMaskedAndSoldAnnonces(): void
+    {
+        AnnonceFactory::createOne(['title' => 'Visible annonce']);
+        AnnonceFactory::createOne(['masked' => true, 'title' => 'Masked annonce']);
+        AnnonceFactory::createOne(['sold' => true, 'title' => 'Sold annonce']);
+
+        $response = static::createClient()->request('GET', '/api/annonces');
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(1, $data['totalItems']);
+        $this->assertSame(['Visible annonce'], array_column($data['member'], 'title'));
+    }
+
+    public function testAdminAnnonceCollectionShowsMaskedAndSoldAnnonces(): void
+    {
+        $admin = UserFactory::createOne(['roles' => ['ROLE_ADMIN']]);
+        $token = ApiTokenFactory::createOne(['ownedBy' => $admin, 'scopes' => []]);
+        AnnonceFactory::createOne(['title' => 'Visible annonce']);
+        AnnonceFactory::createOne(['masked' => true, 'title' => 'Masked annonce']);
+        AnnonceFactory::createOne(['sold' => true, 'title' => 'Sold annonce']);
+
+        $response = static::createClient()->request('GET', '/api/annonces', [
+            'headers' => $this->authorizationHeaders($token),
+        ]);
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(3, $data['totalItems']);
+        $this->assertEqualsCanonicalizing(
+            ['Visible annonce', 'Masked annonce', 'Sold annonce'],
+            array_column($data['member'], 'title'),
+        );
+    }
+
     public function testAnnonceItemIsPublicAndKeepsFullDescription(): void
     {
         $description = 'This description is intentionally longer than thirty characters.';
@@ -89,6 +124,32 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertArrayNotHasKey('address', $data);
     }
 
+    #[DataProvider('hiddenAnnonceProvider')]
+    public function testPublicAnnonceItemDoesNotReturnHiddenAnnonce(array $attributes): void
+    {
+        $annonce = AnnonceFactory::createOne($attributes);
+
+        static::createClient()->request('GET', '/api/annonces/'.$annonce->getId());
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    #[DataProvider('hiddenAnnonceProvider')]
+    public function testAdminAnnonceItemReturnsHiddenAnnonce(array $attributes): void
+    {
+        $admin = UserFactory::createOne(['roles' => ['ROLE_ADMIN']]);
+        $token = ApiTokenFactory::createOne(['ownedBy' => $admin, 'scopes' => []]);
+        $annonce = AnnonceFactory::createOne($attributes + ['title' => 'Hidden annonce']);
+
+        $response = static::createClient()->request('GET', '/api/annonces/'.$annonce->getId(), [
+            'headers' => $this->authorizationHeaders($token),
+        ]);
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('Hidden annonce', $data['title']);
+    }
+
     public function testAnnonceItemShowsRatingsAndFavoritesRelations(): void
     {
         $rater = UserFactory::createOne();
@@ -107,8 +168,8 @@ class AnnonceApiTest extends ApiTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSame('Rated annonce', $data['title']);
-        $this->assertSame(['/api/users/'.$rater->getId()], $data['ratings']);
-        $this->assertSame(['/api/users/'.$favoriteUser->getId()], $data['favorites']);
+        $this->assertSame('/api/users/'.$rater->getId(), $data['ratings'][0]['@id']);
+        $this->assertSame('/api/users/'.$favoriteUser->getId(), $data['favorites'][0]['@id']);
     }
 
     public function testOwnerCanGetAnnonceEditPayloadWithAddress(): void
@@ -200,7 +261,7 @@ class AnnonceApiTest extends ApiTestCase
             'json' => $this->validAnnoncePayload([
                 'author' => $userIri,
                 'categories' => [AnnonceCategory::Sport->value],
-                'price' => '350.00',
+                'price' => 350,
                 'title' => 'Road bike',
                 'city' => 'Paris',
                 'address' => '10 rue de Rivoli',
@@ -350,7 +411,7 @@ class AnnonceApiTest extends ApiTestCase
     }
 
     #[DataProvider('deleteAllowedProvider')]
-    public function testOwnerModeratorOrAdminCanDeleteAnnonce(string $case, array $roles, bool $isOwner): void
+    public function testOwnerOrAdminCanDeleteAnnonce(string $case, array $roles, bool $isOwner): void
     {
         $user = UserFactory::createOne(['roles' => $roles]);
         $token = ApiTokenFactory::createOne(['ownedBy' => $user, 'scopes' => []]);
@@ -362,6 +423,19 @@ class AnnonceApiTest extends ApiTestCase
         ]);
 
         $this->assertResponseStatusCodeSame(204, $case);
+    }
+
+    public function testModeratorCannotDeleteAnnonce(): void
+    {
+        $moderator = UserFactory::createOne(['roles' => ['ROLE_MODERATOR']]);
+        $token = ApiTokenFactory::createOne(['ownedBy' => $moderator, 'scopes' => []]);
+        $annonce = AnnonceFactory::createOne(['author' => UserFactory::createOne()]);
+
+        static::createClient()->request('DELETE', '/api/annonces/'.$annonce->getId(), [
+            'headers' => $this->authorizationHeaders($token),
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testOwnerCanUploadAnnonceImage(): void
@@ -659,7 +733,16 @@ class AnnonceApiTest extends ApiTestCase
         yield 'category' => ['categories=electronic', ['Gaming laptop', 'Phone charger']];
         yield 'title search' => ['title=phone', ['Phone charger']];
         yield 'description search' => ['description=outdoor', ['Garden chair']];
-        yield 'sold status' => ['sold=true', ['Expensive car']];
+        yield 'sold status' => ['sold=true', []];
+    }
+
+    /**
+     * @return iterable<string, array{array<string, bool>}>
+     */
+    public static function hiddenAnnonceProvider(): iterable
+    {
+        yield 'masked' => [['masked' => true]];
+        yield 'sold' => [['sold' => true]];
     }
 
     /**
@@ -668,7 +751,6 @@ class AnnonceApiTest extends ApiTestCase
     public static function deleteAllowedProvider(): iterable
     {
         yield 'owner' => ['owner', [], true];
-        yield 'moderator' => ['moderator', ['ROLE_MODERATOR'], false];
         yield 'admin' => ['admin', ['ROLE_ADMIN'], false];
     }
 
