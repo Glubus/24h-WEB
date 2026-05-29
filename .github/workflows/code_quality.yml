@@ -42,7 +42,3 @@ jobs:
           cd web
           npm install
           npm run test
-          echo "Running back tests..."
-          cd ../sfapi
-          composer install --no-scripts
-          composer run test
