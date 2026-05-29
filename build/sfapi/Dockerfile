@@ -29,6 +29,8 @@ RUN if [ ! -z ${USER_NAME} ] && [ ! -z ${GROUP_NAME} ] && [ ${USER_ID:-0} -ne 0 
 # Login to container as non-root user
 USER ${USER_ID:-0}:${GROUP_ID:-0}
 
+WORKDIR /app/sfapi
+
 RUN composer install && \
     php bin/console doctrine:migrations:migrate --no-interaction && \
     php bin/console doctrine:fixtures:load --no-interaction && \
