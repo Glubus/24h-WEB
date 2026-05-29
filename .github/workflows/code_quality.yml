@@ -45,4 +45,4 @@ jobs:
           echo "Running back tests..."
           cd ../sfapi
           composer install --no-scripts
-          composer run test:coverage
+          composer run test
