@@ -6,10 +6,13 @@ import type {
   AnnonceListItem,
   ApiCollection,
   ApiId,
+  Conversation,
   CreateAnnoncePayload,
+  CreateMessagePayload,
   CreateUserPayload,
   LoginCredentials,
   LoginResponse,
+  Message,
   UpdateAnnoncePayload,
   UpdateUserPayload,
   User,
@@ -94,12 +97,36 @@ export class ApiPlatformClient {
     })
   }
 
+  deleteAnnonceImage(id: ApiId, imageIndex: number) {
+    return this.delete<void>(`/annonces/${id}/images/${imageIndex}`)
+  }
+
   switchAnnonceMasked(id: ApiId) {
     return this.postJson<Annonce>(`/annonces/${id}/masked`, {})
   }
 
   listAnnonceCategories() {
     return this.get<ApiCollection<AnnonceCategoryResource>>('/annonces/categories')
+  }
+
+  listConversations() {
+    return this.get<ApiCollection<Conversation>>('/conversations')
+  }
+
+  listMessages(conversationId: ApiId) {
+    return this.get<ApiCollection<Message>>(`/messages?conversation=/api/conversations/${conversationId}`)
+  }
+
+  createMessage(payload: CreateMessagePayload) {
+    return this.postJson<Message>('/messages', payload)
+  }
+
+  deleteMessage(id: ApiId) {
+    return this.delete<void>(`/messages/${id}`)
+  }
+
+  whoami() {
+    return this.get<User>('/me')
   }
 
   getUser(id: ApiId) {
@@ -112,6 +139,16 @@ export class ApiPlatformClient {
 
   updateUser(id: ApiId, payload: UpdateUserPayload) {
     return this.patchJson<User>(`/users/${id}`, payload)
+  }
+
+  uploadUserImage(id: ApiId, image: File) {
+    const formData = new FormData()
+    formData.append('image', image)
+
+    return this.request<User>(`/users/${id}/pictures`, {
+      method: 'POST',
+      body: formData,
+    })
   }
 
   deleteUser(id: ApiId) {
@@ -194,6 +231,7 @@ export class ApiPlatformClient {
     appendQuery(query, 'title', filters.title)
     appendQuery(query, 'description', filters.description)
     appendQuery(query, 'masked', filters.masked)
+    appendQuery(query, 'sold', filters.sold)
     appendQuery(query, 'page', filters.page)
 
     const categories = Array.isArray(filters.categories)

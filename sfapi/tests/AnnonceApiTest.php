@@ -65,6 +65,7 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertSame(1, $data['totalItems']);
         $this->assertSame('Compact car', $data['member'][0]['title']);
         $this->assertSame('Paris', $data['member'][0]['city']);
+        $this->assertFalse($data['member'][0]['sold']);
         $this->assertArrayNotHasKey('address', $data['member'][0]);
     }
 
@@ -214,6 +215,7 @@ class AnnonceApiTest extends ApiTestCase
             'city' => 'Paris',
             'latitude' => '48.8566000',
             'longitude' => '2.3522000',
+            'sold' => false,
         ]);
     }
 
@@ -233,11 +235,13 @@ class AnnonceApiTest extends ApiTestCase
             'json' => [
                 'title' => 'After patch',
                 'author' => $userIri,
+                'sold' => true,
             ],
         ]);
 
         $this->assertResponseIsSuccessful();
-        $this->assertJsonContains(['title' => 'After patch']);
+        $this->assertJsonContains(['title' => 'After patch', 'sold' => true]);
+        $this->assertNotNull(static::getContainer()->get(EntityManagerInterface::class)->find(Annonce::class, $annonce->getId())->getSoldAt());
     }
 
     public function testPatchAnnonceCityRefreshesCoordinates(): void
@@ -363,7 +367,10 @@ class AnnonceApiTest extends ApiTestCase
     public function testOwnerCanUploadAnnonceImage(): void
     {
         [$headers, , $user] = $this->authenticatedHeadersAndUserIri([]);
-        $annonce = AnnonceFactory::createOne(['author' => $user]);
+        $annonce = AnnonceFactory::createOne([
+            'author' => $user,
+            'images' => ['/uploads/annonces/existing.png'],
+        ]);
         $image = $this->uploadedPng();
 
         $response = static::createClient()->request('POST', '/api/annonces/'.$annonce->getId().'/image', [
@@ -373,7 +380,62 @@ class AnnonceApiTest extends ApiTestCase
         $data = $response->toArray();
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringStartsWith('/uploads/annonces/', $data['imagePath']);
+        $this->assertCount(2, $data['images']);
+        $this->assertSame('/uploads/annonces/existing.png', $data['images'][0]);
+        $this->assertStringStartsWith('/uploads/annonces/', $data['images'][1]);
+    }
+
+    public function testOwnerCanReplaceAnnonceImagesWithPatch(): void
+    {
+        [$headers, $userIri, $user] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne([
+            'author' => $user,
+            'images' => ['/uploads/annonces/old.png'],
+        ]);
+
+        static::createClient()->request('PATCH', '/api/annonces/'.$annonce->getId(), [
+            'headers' => [
+                ...$headers,
+                'Content-Type' => 'application/merge-patch+json',
+            ],
+            'json' => [
+                'author' => $userIri,
+                'images' => ['/uploads/annonces/new-a.png', '/uploads/annonces/new-b.png'],
+            ],
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'images' => ['/uploads/annonces/new-a.png', '/uploads/annonces/new-b.png'],
+        ]);
+    }
+
+    public function testOwnerCanDeleteSpecificAnnonceImage(): void
+    {
+        [$headers, , $user] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne([
+            'author' => $user,
+            'images' => [
+                '/uploads/annonces/first.png',
+                '/uploads/annonces/second.png',
+                '/uploads/annonces/third.png',
+            ],
+        ]);
+
+        static::createClient()->request('DELETE', '/api/annonces/'.$annonce->getId().'/images/1', [
+            'headers' => $headers,
+        ]);
+
+        $this->assertResponseStatusCodeSame(204);
+
+        $response = static::createClient()->request('GET', '/api/annonces/'.$annonce->getId());
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame([
+            '/uploads/annonces/first.png',
+            '/uploads/annonces/third.png',
+        ], $data['images']);
     }
 
     public function testNonOwnerCannotUploadAnnonceImage(): void
@@ -403,7 +465,8 @@ class AnnonceApiTest extends ApiTestCase
         $data = $response->toArray();
 
         $this->assertResponseIsSuccessful($case);
-        $this->assertStringStartsWith('/uploads/annonces/', $data['imagePath']);
+        $this->assertCount(1, $data['images']);
+        $this->assertStringStartsWith('/uploads/annonces/', $data['images'][0]);
     }
 
     public function testOwnerCanSwitchAnnonceMaskedState(): void
@@ -509,6 +572,7 @@ class AnnonceApiTest extends ApiTestCase
         yield 'category' => ['categories=electronic', ['Gaming laptop', 'Phone charger']];
         yield 'title search' => ['title=phone', ['Phone charger']];
         yield 'description search' => ['description=outdoor', ['Garden chair']];
+        yield 'sold status' => ['sold=true', ['Expensive car']];
     }
 
     /**
@@ -576,6 +640,7 @@ class AnnonceApiTest extends ApiTestCase
             'categories' => [AnnonceCategory::Car->value],
             'price' => '10.00',
             'masked' => false,
+            'sold' => false,
         ], $override);
     }
 
@@ -597,6 +662,7 @@ class AnnonceApiTest extends ApiTestCase
             'categories' => [AnnonceCategory::Car->value],
             'description' => 'Vehicle listing',
             'price' => 12000,
+            'sold' => true,
             'title' => 'Expensive car',
         ]);
         AnnonceFactory::createOne([

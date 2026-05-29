@@ -35,6 +35,7 @@ describe('ApiPlatformClient', () => {
       description: 'course',
       categories: ['sport', 'home'],
       masked: false,
+      sold: true,
       page: 2,
       price: {
         gte: 10,
@@ -51,6 +52,7 @@ describe('ApiPlatformClient', () => {
     expect(requestUrl.searchParams.get('description')).toBe('course')
     expect(requestUrl.searchParams.getAll('categories')).toEqual(['sport', 'home'])
     expect(requestUrl.searchParams.get('masked')).toBe('false')
+    expect(requestUrl.searchParams.get('sold')).toBe('true')
     expect(requestUrl.searchParams.get('page')).toBe('2')
     expect(requestUrl.searchParams.get('price[gte]')).toBe('10')
     expect(requestUrl.searchParams.get('price[lte]')).toBe('50')
@@ -75,7 +77,7 @@ describe('ApiPlatformClient', () => {
   it('uploads annonce images as multipart form data without forcing a content type', async () => {
     const client = new ApiPlatformClient({ baseUrl: apiBaseUrl, token: 'token-123' })
     const image = new File(['image-content'], 'annonce.png', { type: 'image/png' })
-    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 7, imagePath: '/uploads/annonce.png' }))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 7, images: ['/uploads/annonce.png'] }))
 
     await client.uploadAnnonceImage(7, image)
     const [url, init] = lastFetchCall()
@@ -87,6 +89,34 @@ describe('ApiPlatformClient', () => {
     expect((init?.body as FormData).get('image')).toBe(image)
     expect(headers.get('Authorization')).toBe('Bearer token-123')
     expect(headers.has('Content-Type')).toBe(false)
+  })
+
+  it('uploads user profile pictures through the API pictures route', async () => {
+    const client = new ApiPlatformClient({ baseUrl: apiBaseUrl, token: 'token-123' })
+    const image = new File(['image-content'], 'profile.png', { type: 'image/png' })
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 3, profileImagePath: '/uploads/users/profile.png' }))
+
+    await client.uploadUserImage(3, image)
+    const [url, init] = lastFetchCall()
+    const headers = requestHeaders(init)
+
+    expect(url).toBe(`${apiBaseUrl}/users/3/pictures`)
+    expect(init?.method).toBe('POST')
+    expect(init?.body).toBeInstanceOf(FormData)
+    expect((init?.body as FormData).get('image')).toBe(image)
+    expect(headers.get('Authorization')).toBe('Bearer token-123')
+    expect(headers.has('Content-Type')).toBe(false)
+  })
+
+  it('deletes a specific annonce image by index', async () => {
+    const client = new ApiPlatformClient({ baseUrl: apiBaseUrl, token: 'token-123' })
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    await expect(client.deleteAnnonceImage(7, 0)).resolves.toBeUndefined()
+    const [url, init] = lastFetchCall()
+
+    expect(url).toBe(`${apiBaseUrl}/annonces/7/images/0`)
+    expect(init?.method).toBe('DELETE')
   })
 
   it('switches masked state through the dedicated annonce route', async () => {

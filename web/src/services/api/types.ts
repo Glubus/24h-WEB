@@ -15,6 +15,7 @@ export type AnnonceFilters = {
   description?: string
   categories?: AnnonceCategory | AnnonceCategory[]
   masked?: boolean
+  sold?: boolean
   price?: AnnoncePriceFilter
   page?: number
 }
@@ -46,11 +47,35 @@ export type User = JsonLdResource & {
   email: string
   username: string
   phone?: string | null
+  profileImagePath?: string | null
   rating?: number | null
   annonces?: ApiIri[]
   ratedAnnonces?: ApiIri[]
   favoriteAnnonces?: ApiIri[]
   userIdentifier?: string
+}
+
+export type Conversation = JsonLdResource & {
+  id: number
+  userOne: User
+  userTwo: User
+  createdAt: string
+}
+
+export type Message = JsonLdResource & {
+  id: number
+  conversation: Conversation
+  author: User
+  content?: string | null
+  annonce?: AnnonceListItem | ApiIri | null
+  deleted: boolean
+  createdAt: string
+}
+
+export type CreateMessagePayload = {
+  conversation: ApiIri
+  content?: string | null
+  annonce?: ApiIri | null
 }
 
 export type CreateUserPayload = {
@@ -70,11 +95,13 @@ export type AnnonceListItem = JsonLdResource & {
   title: string
   description: string
   author: ApiIri | User
-  imagePath?: string | null
+  images: string[]
   city?: string | null
   price: string
   categories: AnnonceCategory[]
   masked: boolean
+  sold: boolean
+  soldAt?: string | null
   latitude?: string | null
   longitude?: string | null
   createdAt: string
@@ -97,7 +124,9 @@ export type CreateAnnoncePayload = {
   city?: string | null
   price: string | number
   categories: AnnonceCategory[]
+  images?: string[]
   masked?: boolean
+  sold?: boolean
   latitude?: string | number | null
   longitude?: string | number | null
 }
