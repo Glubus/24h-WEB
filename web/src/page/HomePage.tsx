@@ -3,9 +3,10 @@ import {CategorySmallAnnonceCard} from "../components/CategorySmallAnnonceCard.t
 
 type HomePageProps = {
   onNavigate: (page: Page) => void
+  onNavigateAnnonce: (id: number) => void
 }
 
-export function HomePage({ onNavigate }: HomePageProps) {
+export function HomePage({ onNavigate, onNavigateAnnonce }: HomePageProps) {
   return (
     <div>
       <main className="hero min-h-[calc(100vh-65px)] bg-base-200">
@@ -36,11 +37,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </main>
       <section className="bg-base-100 py-10 px-6">
-        <div className={"flex-row flex-wrap gap-10 flex"}>
-          <CategorySmallAnnonceCard />
-          <CategorySmallAnnonceCard />
-          <CategorySmallAnnonceCard />
-          <CategorySmallAnnonceCard />
+        <div className={"flex flex-col gap-10"}>
+          <CategorySmallAnnonceCard category="car" onNavigateAnnonce={onNavigateAnnonce} />
+          <CategorySmallAnnonceCard category="electronic" onNavigateAnnonce={onNavigateAnnonce} />
+          <CategorySmallAnnonceCard category="sport" onNavigateAnnonce={onNavigateAnnonce} />
+          <CategorySmallAnnonceCard category="home" onNavigateAnnonce={onNavigateAnnonce} />
         </div>
 
 
