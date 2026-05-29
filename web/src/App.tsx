@@ -10,6 +10,7 @@ import { CreateAnnoncePage } from './page/CreateAnnoncePage'
 import { ChatPage } from './page/ChatPage'
 import { PaymentPage } from './page/PaymentPage'
 import { Navbar } from './components/Navbar'
+import { FloatingChat } from './components/FloatingChat'
 import { ApiError, api } from './services/api'
 import type { User } from './services/api'
 import { clearCachedCurrentUser, readCachedCurrentUser, writeCachedCurrentUser } from './services/api/currentUserCache'
@@ -252,6 +253,7 @@ function App() {
           <LoginPage onLogin={handleCurrentUserChange} onNavigate={setPage} />
         )}
       </div>
+      <FloatingChat onNavigateAnnonce={navigateToAnnonce} />
     </>
   );
 }
