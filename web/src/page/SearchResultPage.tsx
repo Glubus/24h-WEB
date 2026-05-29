@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
 import type { Page } from '../types/page'
-import { api } from '../services/api'
+import {api, type User} from '../services/api'
 import type { AnnonceListItem } from '../services/api'
+import {SmallCardAnnonce} from "../components/SmallCardAnnonce.tsx";
 
 export type SearchResultPageProps = {
+    currentUser: User | null
     onNavigate: (page: Page) => void
     query?: string
-    category?: string
+    onNavigateAnnonce: (id: number) => void
 }
 
-export function SearchResultPage({ onNavigate, query, category }: SearchResultPageProps) {
+export function SearchResultPage({ currentUser,onNavigate, query,  onNavigateAnnonce }: SearchResultPageProps) {
     const [results, setResults] = useState<AnnonceListItem[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const normalizedQuery = (query ?? category ?? '').trim()
+    const normalizedQuery = (query ?? '').trim()
 
     useEffect(() => {
         if (normalizedQuery.length === 0) {
@@ -80,22 +82,20 @@ export function SearchResultPage({ onNavigate, query, category }: SearchResultPa
             ) : null}
 
             <div className="flex flex-wrap gap-4">
-                {results.map((annonce) => (
-                    <div key={annonce.id} className="card bg-base-200 w-55">
-                        <figure>
-                            <div className="relative">
-                                <img
-                                    src={annonce.imagePath ?? 'https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp'}
-                                    alt={annonce.title}
-                                />
-                                <div className="badge absolute top-2 left-2 badge-ghost badge-lg">{annonce.price}</div>
-                            </div>
-                        </figure>
-                        <div className="card-body p-2 text-left mb-4">
-                            <h2 className="card-title card-sm">{annonce.title}</h2>
-                            <p>{annonce.city ?? 'Ville non renseignée'}</p>
-                        </div>
-                    </div>
+                {results.map(annonce => (
+                    <SmallCardAnnonce
+                        key={annonce.id}
+                        author={annonce.author}
+                        createdAt={annonce.createdAt}
+                        currentUserId={currentUser?.id}
+                        id={annonce.id}
+                        favorites={annonce.favorites}
+                        title={annonce.title}
+                        price={annonce.price}
+                        images={annonce.images}
+                        city={annonce.city}
+                        onClick={() => onNavigateAnnonce(annonce.id)}
+                    />
                 ))}
             </div>
         </div>

@@ -20,7 +20,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="w-full max-w-xl">
+        <form onSubmit={handleSubmit} className="w-full max-w-xl flex">
             <label className="input w-full flex items-center gap-2">
                 <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <g
@@ -41,10 +41,10 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                 />
-                <button type="submit" className="btn btn-sm btn-primary">
-                    Rechercher
-                </button>
             </label>
+            <button type="submit" className="btn btn-sm btn-primary h-10">
+                Rechercher
+            </button>
         </form>
     )
 }

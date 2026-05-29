@@ -76,7 +76,7 @@ function App() {
         ) : page === 'chat' ? (
           <ChatPage currentUser={currentUser} initialConversationId={chatConversationId} onNavigate={setPage} />
         ) : page === 'search' ? (
-            <SearchResultPage currentUser={currentUser} onNavigate={setPage} category={searchQuery} />
+            <SearchResultPage currentUser={currentUser} onNavigate={setPage} query={searchQuery} onNavigateAnnonce={navigateToAnnonce} />
         ) : (
           <LoginPage onLogin={setCurrentUser} onNavigate={setPage} />
         )}
