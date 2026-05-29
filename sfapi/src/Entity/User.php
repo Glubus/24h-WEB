@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -60,6 +61,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read','user:write'])]
     private ?string $username = null;
 
+    #[ORM\Column(length: 30, nullable: true)]
+    #[Groups(['user:read','user:write'])]
+    private ?string $phone = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['user:read','user:write'])]
+    #[Assert\Range(min: 0, max: 5)]
+    private ?float $rating = null;
+
     /**
      * @var Collection<int, ApiToken>
      */
@@ -72,10 +82,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: DragonTreasure::class, mappedBy: 'user')]
     private Collection $treasures;
 
+    /**
+     * @var Collection<int, Annonce>
+     */
+    #[ORM\OneToMany(targetEntity: Annonce::class, mappedBy: 'author', orphanRemoval: true)]
+    private Collection $annonces;
+
     public function __construct()
     {
         $this->apiTokens = new ArrayCollection();
         $this->treasures = new ArrayCollection();
+        $this->annonces = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -165,6 +182,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): static
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function getRating(): ?float
+    {
+        return $this->rating;
+    }
+
+    public function setRating(?float $rating): static
+    {
+        $this->rating = $rating;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, ApiToken>
      */
@@ -224,6 +265,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($treasure->getUser() === $this) {
                 $treasure->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Annonce>
+     */
+    public function getAnnonces(): Collection
+    {
+        return $this->annonces;
+    }
+
+    public function addAnnonce(Annonce $annonce): static
+    {
+        if (!$this->annonces->contains($annonce)) {
+            $this->annonces->add($annonce);
+            $annonce->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAnnonce(Annonce $annonce): static
+    {
+        if ($this->annonces->removeElement($annonce)) {
+            if ($annonce->getAuthor() === $this) {
+                $annonce->setAuthor(null);
             }
         }
 
