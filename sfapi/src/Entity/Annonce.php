@@ -13,14 +13,14 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Enum\AnnonceCategory;
-use App\State\AnnoncePersistProcessor;
-use App\State\AnnonceMaskedSwitchProcessor;
-use App\State\AnnonceImageUploadProcessor;
-use App\State\AnnonceImageDeleteProcessor;
+use App\Repository\AnnonceRepository;
 use App\State\AnnonceFavoriteToggleProcessor;
+use App\State\AnnonceImageDeleteProcessor;
+use App\State\AnnonceImageUploadProcessor;
+use App\State\AnnonceMaskedSwitchProcessor;
+use App\State\AnnoncePersistProcessor;
 use App\State\ConversationFromAnnonceProcessor;
 use App\State\SellerRatingProcessor;
-use App\Repository\AnnonceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -110,6 +110,7 @@ class Annonce
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['annonce:list', 'annonce:read'])]
+    // @phpstan-ignore-next-line
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -285,7 +286,7 @@ class Annonce
      */
     public function setImages(array $images): static
     {
-        $this->images = array_values($images);
+        $this->images = $images;
 
         return $this;
     }
@@ -358,10 +359,10 @@ class Annonce
      */
     public function setCategories(array $categories): static
     {
-        $this->categories = array_values(array_map(
+        $this->categories = array_map(
             static fn (string|AnnonceCategory $category): string => $category instanceof AnnonceCategory ? $category->value : $category,
             $categories,
-        ));
+        );
 
         return $this;
     }

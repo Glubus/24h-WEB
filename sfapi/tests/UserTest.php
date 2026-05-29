@@ -4,11 +4,11 @@ namespace App\Tests;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
 use App\Entity\Annonce;
+use App\Entity\ApiToken;
 use App\Entity\User;
 use App\Factory\AnnonceFactory;
-use App\Factory\UserFactory;
 use App\Factory\ApiTokenFactory;
-use App\Entity\ApiToken;
+use App\Factory\UserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Zenstruck\Foundry\Test\Factories;
 use Zenstruck\Foundry\Test\ResetDatabase;
@@ -25,14 +25,14 @@ class UserTest extends ApiTestCase
         $client = static::createClient();
 
         $user = UserFactory::createOne([
-            "email" => "test@example.com",
-            "password" => "123456",
-            "username" => "testuser",
+            'email' => 'test@example.com',
+            'password' => '123456',
+            'username' => 'testuser',
         ]);
 
         $apiToken = ApiTokenFactory::createOne([
-            "ownedBy" => $user,
-            "scopes" => [ApiToken::SCOPE_USER_EDIT, ApiToken::SCOPE_ANNONCE_CREATE],
+            'ownedBy' => $user,
+            'scopes' => [ApiToken::SCOPE_USER_EDIT, ApiToken::SCOPE_ANNONCE_CREATE],
         ]);
         $response = $client->request('GET', '/api/annonces', [
             'headers' => [

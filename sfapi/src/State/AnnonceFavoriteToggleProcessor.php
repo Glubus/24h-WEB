@@ -11,7 +11,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
- * @implements ProcessorInterface<Annonce, Annonce>
+ * @implements ProcessorInterface<mixed, Annonce>
  */
 final class AnnonceFavoriteToggleProcessor implements ProcessorInterface
 {

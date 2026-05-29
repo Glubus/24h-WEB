@@ -79,7 +79,7 @@
         "doctrine:schema:validate": "php bin/console doctrine:schema:validate",
         "test": "php bin/phpunit --testdox",
         "test:coverage": "php bin/phpunit --coverage-clover coverage/clover.xml",
-        "lint": "vendor/bin/phpstan analyse src tests",
+        "lint": "vendor/bin/phpstan analyse --memory-limit=512M src tests",
         "format:check": "./vendor/bin/php-cs-fixer check",
         "format:fix": "./vendor/bin/php-cs-fixer fix"
     },

@@ -24,6 +24,9 @@ final class CurrentUserMessagesProvider implements ProviderInterface
     ) {
     }
 
+    /**
+     * @return list<Message>
+     */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array
     {
         $user = $this->security->getUser();

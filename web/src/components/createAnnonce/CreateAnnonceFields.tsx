@@ -1,25 +1,25 @@
-import type { ChangeEvent } from 'react'
-import type { AnnonceCategory } from '../../services/api'
-import { LocationIcon, PriceIcon, TitleIcon } from './CreateAnnonceIcons'
-import { ImagePicker, type ImagePreview } from './ImagePicker'
-import { annonceCategories } from './createAnnonceOptions'
+import type { ChangeEvent } from "react";
+import type { AnnonceCategory } from "../../services/api";
+import { LocationIcon, PriceIcon, TitleIcon } from "./CreateAnnonceIcons";
+import { ImagePicker, type ImagePreview } from "./ImagePicker";
+import { annonceCategories } from "./createAnnonceOptions";
 
 type CreateAnnonceFieldsProps = {
-  address: string
-  category: AnnonceCategory
-  city: string
-  description: string
-  imagePreviews: ImagePreview[]
-  onAddressChange: (value: string) => void
-  onCategoryChange: (value: AnnonceCategory) => void
-  onCityChange: (value: string) => void
-  onDescriptionChange: (value: string) => void
-  onImagesChange: (event: ChangeEvent<HTMLInputElement>) => void
-  onPriceChange: (value: string) => void
-  onTitleChange: (value: string) => void
-  price: string
-  title: string
-}
+  address: string;
+  category: AnnonceCategory;
+  city: string;
+  description: string;
+  imagePreviews: ImagePreview[];
+  onAddressChange: (value: string) => void;
+  onCategoryChange: (value: AnnonceCategory) => void;
+  onCityChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onImagesChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onPriceChange: (value: string) => void;
+  onTitleChange: (value: string) => void;
+  price: string;
+  title: string;
+};
 
 export function CreateAnnonceFields({
   address,
@@ -67,7 +67,9 @@ export function CreateAnnonceFields({
 
       <select
         className="select select-bordered h-12 w-full bg-base-200/60"
-        onChange={(event) => onCategoryChange(event.target.value as AnnonceCategory)}
+        onChange={(event) =>
+          onCategoryChange(event.target.value as AnnonceCategory)
+        }
         value={category}
       >
         {annonceCategories.map((item) => (
@@ -78,7 +80,11 @@ export function CreateAnnonceFields({
       </select>
 
       <LocationField onChange={onCityChange} placeholder="Ville" value={city} />
-      <LocationField onChange={onAddressChange} placeholder="Adresse" value={address} />
+      <LocationField
+        onChange={onAddressChange}
+        placeholder="Adresse"
+        value={address}
+      />
 
       <textarea
         className="textarea textarea-bordered min-h-36 bg-base-200/60 md:col-span-2"
@@ -88,9 +94,12 @@ export function CreateAnnonceFields({
         value={description}
       />
 
-      <ImagePicker imagePreviews={imagePreviews} onImagesChange={onImagesChange} />
+      <ImagePicker
+        imagePreviews={imagePreviews}
+        onImagesChange={onImagesChange}
+      />
     </div>
-  )
+  );
 }
 
 function LocationField({
@@ -98,9 +107,9 @@ function LocationField({
   placeholder,
   value,
 }: {
-  onChange: (value: string) => void
-  placeholder: string
-  value: string
+  onChange: (value: string) => void;
+  placeholder: string;
+  value: string;
 }) {
   return (
     <label className="input input-bordered flex h-12 w-full items-center gap-3 bg-base-200/60 focus-within:bg-base-100">
@@ -113,5 +122,5 @@ function LocationField({
         value={value}
       />
     </label>
-  )
+  );
 }

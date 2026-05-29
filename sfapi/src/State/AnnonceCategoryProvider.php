@@ -7,6 +7,9 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AnnonceCategoryResource;
 use App\Enum\AnnonceCategory;
 
+/**
+ * @implements ProviderInterface<AnnonceCategoryResource>
+ */
 final class AnnonceCategoryProvider implements ProviderInterface
 {
     /**
