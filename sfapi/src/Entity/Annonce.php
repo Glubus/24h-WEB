@@ -38,6 +38,11 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/annonces/{id}',
             normalizationContext: ['groups' => ['annonce:read']],
         ),
+        new Get(
+            uriTemplate: '/annonces/{id}/edit',
+            normalizationContext: ['groups' => ['annonce:read', 'annonce:edit']],
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+        ),
         new Patch(
             uriTemplate: '/annonces/{id}',
             security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
@@ -93,11 +98,11 @@ class Annonce
     private ?string $imagePath = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:edit', 'annonce:write'])]
     private ?string $address = null;
 
     #[ORM\Column(length: 120, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:edit', 'annonce:write'])]
     private ?string $city = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]

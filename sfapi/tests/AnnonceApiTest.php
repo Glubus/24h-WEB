@@ -48,7 +48,9 @@ class AnnonceApiTest extends ApiTestCase
     public function testAnnonceCollectionIsPublic(): void
     {
         AnnonceFactory::createOne([
+            'address' => 'Secret street',
             'categories' => [AnnonceCategory::Car->value],
+            'city' => 'Paris',
             'price' => 1200,
             'title' => 'Compact car',
         ]);
@@ -59,12 +61,16 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSame(1, $data['totalItems']);
         $this->assertSame('Compact car', $data['member'][0]['title']);
+        $this->assertSame('Paris', $data['member'][0]['city']);
+        $this->assertArrayNotHasKey('address', $data['member'][0]);
     }
 
     public function testAnnonceItemIsPublicAndKeepsFullDescription(): void
     {
         $description = 'This description is intentionally longer than thirty characters.';
         $annonce = AnnonceFactory::createOne([
+            'address' => '12 private road',
+            'city' => 'Paris',
             'description' => $description,
             'title' => 'Detailed annonce',
         ]);
@@ -75,6 +81,63 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSame('Detailed annonce', $data['title']);
         $this->assertSame($description, $data['description']);
+        $this->assertSame('Paris', $data['city']);
+        $this->assertArrayNotHasKey('address', $data);
+    }
+
+    public function testOwnerCanGetAnnonceEditPayloadWithAddress(): void
+    {
+        [$headers, , $user] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne([
+            'address' => '12 private road',
+            'author' => $user,
+            'city' => 'Paris',
+            'title' => 'Editable annonce',
+        ]);
+
+        $response = static::createClient()->request('GET', '/api/annonces/'.$annonce->getId().'/edit', [
+            'headers' => $headers,
+        ]);
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('Editable annonce', $data['title']);
+        $this->assertSame('Paris', $data['city']);
+        $this->assertSame('12 private road', $data['address']);
+    }
+
+    public function testAdminCanGetAnnonceEditPayloadWithAddress(): void
+    {
+        $admin = UserFactory::createOne(['roles' => ['ROLE_ADMIN']]);
+        $token = ApiTokenFactory::createOne(['ownedBy' => $admin, 'scopes' => []]);
+        $annonce = AnnonceFactory::createOne([
+            'address' => '12 private road',
+            'author' => UserFactory::createOne(),
+            'city' => 'Paris',
+        ]);
+
+        $response = static::createClient()->request('GET', '/api/annonces/'.$annonce->getId().'/edit', [
+            'headers' => $this->authorizationHeaders($token),
+        ]);
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('12 private road', $data['address']);
+    }
+
+    public function testNonOwnerCannotGetAnnonceEditPayload(): void
+    {
+        [$headers] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne([
+            'address' => '12 private road',
+            'author' => UserFactory::createOne(),
+        ]);
+
+        static::createClient()->request('GET', '/api/annonces/'.$annonce->getId().'/edit', [
+            'headers' => $headers,
+        ]);
+
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testAnnonceCollectionUsesShortDescription(): void
@@ -124,7 +187,6 @@ class AnnonceApiTest extends ApiTestCase
             'categories' => [AnnonceCategory::Sport->value],
             'price' => '350.00',
             'city' => 'Paris',
-            'address' => '10 rue de Rivoli',
             'latitude' => '48.8566000',
             'longitude' => '2.3522000',
         ]);
