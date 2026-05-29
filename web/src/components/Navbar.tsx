@@ -6,7 +6,7 @@ type NavbarProps = {
 
 export function Navbar({ onNavigate }: NavbarProps) {
   return (
-    <div className="navbar bg-base-100 border-b border-base-300 flex-col items-stretch">
+    <div className="navbar bg-base-100 border-b border-base-300 flex-col items-stretch px-6 md:px-12 lg:px-24 sticky top-0 z-50">
       <div className="w-full flex pb-4">
         <div className="flex-1">
           <button
