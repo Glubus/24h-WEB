@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Enum\AnnonceCategory;
+use App\State\AnnoncePersistProcessor;
 use App\State\AnnonceMaskedSwitchProcessor;
 use App\State\AnnonceImageUploadProcessor;
 use App\Repository\AnnonceRepository;
@@ -31,15 +32,22 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             uriTemplate: '/annonces',
             security: 'is_granted("ROLE_USER")',
+            processor: AnnoncePersistProcessor::class,
         ),
         new Get(
             uriTemplate: '/annonces/{id}',
             normalizationContext: ['groups' => ['annonce:read']],
         ),
+        new Get(
+            uriTemplate: '/annonces/{id}/edit',
+            normalizationContext: ['groups' => ['annonce:read', 'annonce:edit']],
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+        ),
         new Patch(
             uriTemplate: '/annonces/{id}',
             security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
             securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
+            processor: AnnoncePersistProcessor::class,
         ),
         new Delete(
             uriTemplate: '/annonces/{id}',
@@ -89,6 +97,14 @@ class Annonce
     #[Groups(['annonce:list', 'annonce:read'])]
     private ?string $imagePath = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['annonce:edit', 'annonce:write'])]
+    private ?string $address = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:edit', 'annonce:write'])]
+    private ?string $city = null;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     #[ApiFilter(RangeFilter::class)]
@@ -108,11 +124,11 @@ class Annonce
     #[ApiFilter(BooleanFilter::class)]
     private bool $masked = false;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?string $latitude = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?string $longitude = null;
 
@@ -185,6 +201,30 @@ class Annonce
     public function setImagePath(?string $imagePath): static
     {
         $this->imagePath = $imagePath;
+
+        return $this;
+    }
+
+    public function getAddress(): ?string
+    {
+        return $this->address;
+    }
+
+    public function setAddress(?string $address): static
+    {
+        $this->address = $address;
+
+        return $this;
+    }
+
+    public function getCity(): ?string
+    {
+        return $this->city;
+    }
+
+    public function setCity(?string $city): static
+    {
+        $this->city = $city;
 
         return $this;
     }

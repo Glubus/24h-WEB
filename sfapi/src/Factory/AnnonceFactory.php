@@ -19,8 +19,10 @@ final class AnnonceFactory extends PersistentProxyObjectFactory
     protected function defaults(): array|callable
     {
         return [
+            'address' => self::faker()->streetAddress(),
             'author' => UserFactory::new(),
             'categories' => [self::faker()->randomElement(AnnonceCategory::values())],
+            'city' => self::faker()->city(),
             'description' => self::faker()->paragraphs(2, true),
             'latitude' => (string) self::faker()->latitude(),
             'longitude' => (string) self::faker()->longitude(),
