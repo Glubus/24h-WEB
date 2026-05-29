@@ -35,6 +35,7 @@ function App() {
         setCurrentUser(null)
       })
   }, [])
+  const [annonceId, setAnnonceId] = useState<number | null>(null)
 
   function navigateToCategory(name: string) {
     setCategory(name)
@@ -46,6 +47,9 @@ function App() {
     localStorage.removeItem('api_token')
     setCurrentUser(null)
     setPage('home')
+  function navigateToAnnonce(id: number) {
+    setAnnonceId(id)
+    setPage('annonce')
   }
 
   return (
@@ -58,9 +62,9 @@ function App() {
       />
       <div className="px-6 md:px-12 lg:px-24">
         {page === 'home' ? (
-          <HomePage onNavigate={setPage} />
+          <HomePage onNavigate={setPage} onNavigateAnnonce={navigateToAnnonce} />
         ) : page === 'annonce' ? (
-          <AnnoncePage onNavigate={setPage} />
+          <AnnoncePage onNavigate={setPage} annonceId={annonceId} />
         ) : page === 'category' ? (
           <CategoryPage onNavigate={setPage} category={category} />
         ) : page === 'register' ? (
@@ -71,6 +75,7 @@ function App() {
           <CreateAnnoncePage currentUser={currentUser} onNavigate={setPage} />
         ) : page === 'chat' ? (
           <ChatPage currentUser={currentUser} onNavigate={setPage} />
+          <CategoryPage onNavigate={setPage} category={category} onNavigateAnnonce={navigateToAnnonce} />
         ) : (
           <LoginPage onLogin={setCurrentUser} onNavigate={setPage} />
         )}
