@@ -13,7 +13,7 @@ ENV APP_ENV=prod
 COPY ./build/sfapi/conf/default.ini /usr/local/etc/php/conf.d/default.ini
 
 # Set working directory
-WORKDIR /app
+WORKDIR /app/sfapi
 
 # Arguments defined in compose.yml
 ARG USER_NAME
@@ -45,7 +45,7 @@ FROM forge-registry.iut-larochelle.fr/php-fpm-composer/iutlr-info-php8.2-fpm-com
 COPY --from=builder /app /app
 
 # Set working directory
-WORKDIR /app
+WORKDIR /app/sfapi
 
 # Set proper permissions for PHP-FPM
 RUN chown -R www-data:www-data /app && chmod -R 755 /app

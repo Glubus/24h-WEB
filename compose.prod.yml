@@ -1,0 +1,83 @@
+name: 'r5a-8-prod'
+
+services:
+  web:
+    image: node:22-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}-web
+    working_dir: /app
+    command: sh -c "npm ci && npm run build && npm run preview -- --host 0.0.0.0 --port 4173"
+    ports:
+      - 4173:4173
+    volumes:
+      - type: bind
+        source: ./web
+        target: /app
+      - type: volume
+        source: web-node-modules
+        target: /app/node_modules
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    networks:
+      - network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./build/nginx/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME}-nginx
+    container_name: ${COMPOSE_PROJECT_NAME}-nginx
+    depends_on:
+      - sfapi
+    ports:
+      - 8000:80
+    restart: unless-stopped
+    networks:
+      - network
+
+  sfapi:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: ${COMPOSE_PROJECT_NAME}-sfapi
+    container_name: ${COMPOSE_PROJECT_NAME}-sfapi
+    depends_on:
+      - database
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: "mysql://udbsfapi:pdbsfapi@database:3306/dbsfapi?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
+    restart: unless-stopped
+    networks:
+      - network
+
+  database:
+    build:
+      context: .
+      dockerfile: ./build/database/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME}-database
+    container_name: ${COMPOSE_PROJECT_NAME}-database
+    ports:
+      - 3306:3306
+    volumes:
+      - type: volume
+        source: database-volume
+        target: /var/lib/mysql
+    environment:
+      MYSQL_DATABASE: dbsfapi
+      MYSQL_ROOT_PASSWORD: rdbsfapi
+      MYSQL_USER: udbsfapi
+      MYSQL_PASSWORD: pdbsfapi
+    restart: unless-stopped
+    networks:
+      - network
+
+networks:
+  network:
+    name: ${COMPOSE_PROJECT_NAME}-network
+    driver: bridge
+
+volumes:
+  database-volume:
+    driver: local
+  web-node-modules:
+    driver: local
