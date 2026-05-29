@@ -1,15 +1,17 @@
 import type { Page } from '../types/page'
+import { SearchBar } from './SearchBar.tsx'
 
 type NavbarProps = {
   onNavigate: (page: Page) => void
   onNavigateCategory: (category: string) => void
+  onSearch: (query: string) => void
 }
 
-export function Navbar({ onNavigate, onNavigateCategory }: NavbarProps) {
+export function Navbar({ onNavigate, onNavigateCategory, onSearch }: NavbarProps) {
   return (
     <div className="navbar bg-base-100 border-b border-base-300 flex-col items-stretch px-6 md:px-12 lg:px-24 sticky top-0 z-50">
-      <div className="w-full flex pb-4">
-        <div className="flex-1">
+      <div className="w-full flex pb-4 justify-between">
+        <div>
           <button
               type="button"
               className="btn btn-ghost text-xl"
@@ -17,9 +19,11 @@ export function Navbar({ onNavigate, onNavigateCategory }: NavbarProps) {
           >
             LeBon
           </button>
-          <input className="input" placeholder="Rechercher une annonce"/>
         </div>
-        <div className="flex gap-2">
+
+        <SearchBar onSearch={onSearch} />
+
+        <div>
           <button
               type="button"
               className="btn btn-ghost"
