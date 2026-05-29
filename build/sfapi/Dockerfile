@@ -12,6 +12,9 @@ COPY ./build/sfapi/conf/default.ini /usr/local/etc/php/conf.d/default.ini
 # Set working directory
 WORKDIR /app
 
+# Copy application source so Composer can access composer.json during build
+COPY ./sfapi ./sfapi
+
 # Arguments defined in compose.yml
 ARG USER_NAME
 ARG USER_ID
@@ -31,6 +34,4 @@ USER ${USER_ID:-0}:${GROUP_ID:-0}
 
 WORKDIR /app/sfapi
 
-RUN composer install && \
-    php bin/console doctrine:migrations:migrate --no-interaction && \
-    php bin/console doctrine:fixtures:load --no-interaction
+RUN composer install --no-scripts
