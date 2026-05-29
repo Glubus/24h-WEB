@@ -3,11 +3,14 @@
 namespace App\Tests;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use App\Entity\Annonce;
 use App\Entity\ApiToken;
+use App\Entity\User;
 use App\Enum\AnnonceCategory;
 use App\Factory\AnnonceFactory;
 use App\Factory\ApiTokenFactory;
 use App\Factory\UserFactory;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Zenstruck\Foundry\Test\Factories;
@@ -83,6 +86,28 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertSame($description, $data['description']);
         $this->assertSame('Paris', $data['city']);
         $this->assertArrayNotHasKey('address', $data);
+    }
+
+    public function testAnnonceItemShowsRatingsAndFavoritesRelations(): void
+    {
+        $rater = UserFactory::createOne();
+        $favoriteUser = UserFactory::createOne();
+        $annonce = AnnonceFactory::createOne(['title' => 'Rated annonce']);
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $managedAnnonce = $entityManager->find(Annonce::class, $annonce->getId());
+        $managedRater = $entityManager->find(User::class, $rater->getId());
+        $managedFavoriteUser = $entityManager->find(User::class, $favoriteUser->getId());
+        $managedAnnonce->addRating($managedRater);
+        $managedAnnonce->addFavorite($managedFavoriteUser);
+        $entityManager->flush();
+
+        $response = static::createClient()->request('GET', '/api/annonces/'.$annonce->getId());
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('Rated annonce', $data['title']);
+        $this->assertSame(['/api/users/'.$rater->getId()], $data['ratings']);
+        $this->assertSame(['/api/users/'.$favoriteUser->getId()], $data['favorites']);
     }
 
     public function testOwnerCanGetAnnonceEditPayloadWithAddress(): void

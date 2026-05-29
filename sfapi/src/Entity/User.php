@@ -84,10 +84,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Annonce::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $annonces;
 
+    /**
+     * @var Collection<int, Annonce>
+     */
+    #[ORM\ManyToMany(targetEntity: Annonce::class, mappedBy: 'ratings')]
+    #[Groups(['user:read'])]
+    private Collection $ratedAnnonces;
+
+    /**
+     * @var Collection<int, Annonce>
+     */
+    #[ORM\ManyToMany(targetEntity: Annonce::class, mappedBy: 'favorites')]
+    #[Groups(['user:read'])]
+    private Collection $favoriteAnnonces;
+
     public function __construct()
     {
         $this->apiTokens = new ArrayCollection();
         $this->annonces = new ArrayCollection();
+        $this->ratedAnnonces = new ArrayCollection();
+        $this->favoriteAnnonces = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -259,6 +275,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $annonce->setAuthor(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Annonce>
+     */
+    public function getRatedAnnonces(): Collection
+    {
+        return $this->ratedAnnonces;
+    }
+
+    public function addRatedAnnonce(Annonce $annonce): static
+    {
+        if (!$this->ratedAnnonces->contains($annonce)) {
+            $this->ratedAnnonces->add($annonce);
+        }
+
+        return $this;
+    }
+
+    public function removeRatedAnnonce(Annonce $annonce): static
+    {
+        $this->ratedAnnonces->removeElement($annonce);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Annonce>
+     */
+    public function getFavoriteAnnonces(): Collection
+    {
+        return $this->favoriteAnnonces;
+    }
+
+    public function addFavoriteAnnonce(Annonce $annonce): static
+    {
+        if (!$this->favoriteAnnonces->contains($annonce)) {
+            $this->favoriteAnnonces->add($annonce);
+        }
+
+        return $this;
+    }
+
+    public function removeFavoriteAnnonce(Annonce $annonce): static
+    {
+        $this->favoriteAnnonces->removeElement($annonce);
 
         return $this;
     }
