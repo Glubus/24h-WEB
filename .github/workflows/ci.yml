@@ -17,6 +17,7 @@ jobs:
         uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.SSH_HOST }}
+          username: root
           port: 22
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
