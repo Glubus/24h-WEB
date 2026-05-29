@@ -1,4 +1,5 @@
 import type { Page } from '../types/page'
+import { SearchBar } from './SearchBar.tsx'
 import type { User } from '../services/api'
 import { userPictureUrl } from '../services/api/assets'
 import { useCategories } from '../hooks/useCategories'
@@ -11,9 +12,11 @@ type NavbarProps = {
   onLogout: () => void
   onNavigate: (page: Page) => void
   onNavigateCategory: (category: string) => void
+  onSearch: (query: string) => void
 }
 
-export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNavigateCategory }: NavbarProps) {
+
+export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNavigateCategory, onSearch }: NavbarProps) {
   const initial = currentUser?.username.charAt(0).toUpperCase() ?? '?'
   const displayUsername = formatUsername(currentUser?.username)
   const profileImageUrl = currentUser?.id === undefined ? null : userPictureUrl(currentUser.id)
@@ -22,8 +25,8 @@ export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNaviga
 
   return (
     <div className="navbar bg-base-100 border-b border-base-300 flex-col items-stretch px-6 md:px-12 lg:px-24 sticky top-0 z-50">
-      <div className="w-full flex pb-4">
-        <div className="flex-1">
+      <div className="w-full flex pb-4 justify-between">
+        <div>
           <button
               type="button"
               className="btn btn-ghost text-xl"
@@ -31,9 +34,11 @@ export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNaviga
           >
             LeBon
           </button>
-          <input className="input" placeholder="Rechercher une annonce"/>
         </div>
-        <div className="flex gap-2">
+
+        <SearchBar onSearch={onSearch} />
+
+        <div>
           <button
               type="button"
               className="btn btn-ghost"
@@ -107,6 +112,7 @@ export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNaviga
             </div>
           )}
         </div>
+
       </div>
       <div className="w-full">
         {displayCategories.map(category => (

@@ -4,6 +4,7 @@ import { LoginPage } from './page/LoginPage'
 import { RegisterPage } from './page/RegisterPage'
 import { AnnoncePage } from './page/AnnoncePage'
 import { CategoryPage } from './page/CategoryPage'
+import { SearchResultPage } from './page/SearchResultPage'
 import { MyAccountPage } from './page/MyAccountPage'
 import { MyAnnoncesPage } from './page/MyAnnoncesPage'
 import { CreateAnnoncePage } from './page/CreateAnnoncePage'
@@ -20,6 +21,7 @@ import './App.css'
 function App() {
   const [page, setPage] = useState<Page>('home')
   const [category, setCategory] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const token = localStorage.getItem('api_token')
 
@@ -66,7 +68,13 @@ function App() {
 
   function navigateToCategory(name: string) {
     setCategory(name)
+    setSearchQuery('')
     setPage('category')
+  }
+
+  function navigateToSearch(query: string) {
+    setSearchQuery(query)
+    setPage('search')
   }
 
   function handleLogout() {
@@ -133,6 +141,7 @@ function App() {
         onLogout={handleLogout}
         onNavigate={setPage}
         onNavigateCategory={navigateToCategory}
+        onSearch={navigateToSearch}
       />
       <div className="px-6 md:px-12 lg:px-24">
         {page === 'home' ? (
@@ -162,6 +171,8 @@ function App() {
             onNavigate={setPage}
             onSavedAnnonce={navigateToAnnonce}
           />
+        ) : page === 'search' ? (
+            <SearchResultPage currentUser={currentUser} onNavigate={setPage} query={searchQuery} onNavigateAnnonce={navigateToAnnonce} />
         ) : page === 'chat' ? (
           <ChatPage
             currentUser={currentUser}
