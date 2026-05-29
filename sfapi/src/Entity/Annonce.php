@@ -42,7 +42,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             uriTemplate: '/annonces/{id}',
-            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            normalizationContext: ['groups' => ['annonce:read'], 'iri_only' => true],
         ),
         new Get(
             uriTemplate: '/annonces/{id}/edit',
@@ -51,7 +51,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Patch(
             uriTemplate: '/annonces/{id}',
-            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
             securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
             processor: AnnoncePersistProcessor::class,
         ),
@@ -147,7 +147,7 @@ class Annonce
     private ?string $city = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:write'])]
     #[ApiFilter(RangeFilter::class)]
     #[Assert\PositiveOrZero]
     private ?string $price = null;
@@ -175,11 +175,11 @@ class Annonce
     private ?\DateTimeImmutable $soldAt = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:write'])]
     private ?string $latitude = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:write'])]
     private ?string $longitude = null;
 
     #[ORM\Column]
@@ -334,9 +334,14 @@ class Annonce
         return $this;
     }
 
+    #[Groups(['annonce:list', 'annonce:read'])]
     public function getPrice(): ?string
     {
-        return $this->price;
+        if (null === $this->price) {
+            return null;
+        }
+
+        return number_format((float) $this->price, 2, '.', '');
     }
 
     public function setPrice(string|float|int $price): static
@@ -427,26 +432,36 @@ class Annonce
         return $this;
     }
 
+    #[Groups(['annonce:list', 'annonce:read'])]
     public function getLatitude(): ?string
     {
-        return $this->latitude;
+        if (null === $this->latitude) {
+            return null;
+        }
+
+        return number_format((float) $this->latitude, 7, '.', '');
     }
 
     public function setLatitude(string|float $latitude): static
     {
-        $this->latitude = (string) $latitude;
+        $this->latitude = number_format((float) $latitude, 7, '.', '');
 
         return $this;
     }
 
+    #[Groups(['annonce:list', 'annonce:read'])]
     public function getLongitude(): ?string
     {
-        return $this->longitude;
+        if (null === $this->longitude) {
+            return null;
+        }
+
+        return number_format((float) $this->longitude, 7, '.', '');
     }
 
     public function setLongitude(string|float $longitude): static
     {
-        $this->longitude = (string) $longitude;
+        $this->longitude = number_format((float) $longitude, 7, '.', '');
 
         return $this;
     }
