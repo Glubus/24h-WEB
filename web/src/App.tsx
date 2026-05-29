@@ -12,11 +12,12 @@ import { api } from "./services/api";
 import type { User } from "./services/api";
 import type { Page } from "./types/page";
 import "./App.css";
+import { SearchResultPage } from "./page/SearchResultPage.tsx";
 
 function App() {
   const [page, setPage] = useState<Page>("home");
   const [category, setCategory] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [chatConversationId, setChatConversationId] = useState<number | null>(
     null,
@@ -26,13 +27,13 @@ function App() {
 
   function navigateToCategory(name: string) {
     setCategory(name);
-    setSearchQuery('');
-    setPage('category');
+    setSearchQuery("");
+    setPage("category");
   }
 
   function navigateToSearch(query: string) {
-    setSearchQuery(query)
-    setPage('search')
+    setSearchQuery(query);
+    setPage("search");
   }
 
   function handleLogout() {
@@ -92,10 +93,19 @@ function App() {
           />
         ) : page === "createAnnonce" ? (
           <CreateAnnoncePage currentUser={currentUser} onNavigate={setPage} />
-        ) : page === 'chat' ? (
-          <ChatPage currentUser={currentUser} initialConversationId={chatConversationId} onNavigate={setPage} />
-        ) : page === 'search' ? (
-            <SearchResultPage currentUser={currentUser} onNavigate={setPage} query={searchQuery} onNavigateAnnonce={navigateToAnnonce} />
+        ) : page === "chat" ? (
+          <ChatPage
+            currentUser={currentUser}
+            initialConversationId={chatConversationId}
+            onNavigate={setPage}
+          />
+        ) : page === "search" ? (
+          <SearchResultPage
+            currentUser={currentUser}
+            onNavigate={setPage}
+            query={searchQuery}
+            onNavigateAnnonce={navigateToAnnonce}
+          />
         ) : (
           <LoginPage onLogin={setCurrentUser} onNavigate={setPage} />
         )}
