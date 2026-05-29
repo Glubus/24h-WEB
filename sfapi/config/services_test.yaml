@@ -1,0 +1,4 @@
+services:
+    App\Geocoder\CityGeocoderInterface: '@App\Tests\Double\FakeCityGeocoder'
+
+    App\Tests\Double\FakeCityGeocoder: ~

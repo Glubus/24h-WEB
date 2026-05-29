@@ -113,6 +113,8 @@ class AnnonceApiTest extends ApiTestCase
                 'categories' => [AnnonceCategory::Sport->value],
                 'price' => '350.00',
                 'title' => 'Road bike',
+                'city' => 'Paris',
+                'address' => '10 rue de Rivoli',
             ]),
         ]);
 
@@ -121,6 +123,10 @@ class AnnonceApiTest extends ApiTestCase
             'title' => 'Road bike',
             'categories' => [AnnonceCategory::Sport->value],
             'price' => '350.00',
+            'city' => 'Paris',
+            'address' => '10 rue de Rivoli',
+            'latitude' => '48.8566000',
+            'longitude' => '2.3522000',
         ]);
     }
 
@@ -145,6 +151,35 @@ class AnnonceApiTest extends ApiTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertJsonContains(['title' => 'After patch']);
+    }
+
+    public function testPatchAnnonceCityRefreshesCoordinates(): void
+    {
+        [$headers, $userIri, $user] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne([
+            'author' => $user,
+            'city' => 'Paris',
+            'latitude' => '48.8566000',
+            'longitude' => '2.3522000',
+        ]);
+
+        static::createClient()->request('PATCH', '/api/annonces/'.$annonce->getId(), [
+            'headers' => [
+                ...$headers,
+                'Content-Type' => 'application/merge-patch+json',
+            ],
+            'json' => [
+                'author' => $userIri,
+                'city' => 'Lyon',
+            ],
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'city' => 'Lyon',
+            'latitude' => '45.7640000',
+            'longitude' => '4.8357000',
+        ]);
     }
 
     public function testNonOwnerCannotPatchAnnonce(): void
@@ -448,12 +483,12 @@ class AnnonceApiTest extends ApiTestCase
     {
         return array_replace([
             'title' => 'Valid annonce',
+            'address' => '1 place de la mairie',
+            'city' => 'Paris',
             'description' => 'A valid annonce payload',
             'categories' => [AnnonceCategory::Car->value],
             'price' => '10.00',
             'masked' => false,
-            'latitude' => '48.8566000',
-            'longitude' => '2.3522000',
         ], $override);
     }
 
