@@ -6,31 +6,41 @@ type NavbarProps = {
 
 export function Navbar({ onNavigate }: NavbarProps) {
   return (
-    <div className="navbar bg-base-100 border-b border-base-300 px-4">
-      <div className="flex-1">
-        <button
-          type="button"
-          className="btn btn-ghost text-xl"
-          onClick={() => onNavigate('home')}
-        >
-          24h Web
-        </button>
+    <div className="navbar bg-base-100 border-b border-base-300 flex-col items-stretch">
+      <div className="w-full flex pb-4">
+        <div className="flex-1">
+          <button
+              type="button"
+              className="btn btn-ghost text-xl"
+              onClick={() => onNavigate('home')}
+          >
+            LeBon
+          </button>
+          <input className="input" placeholder="Rechercher une annonce"/>
+        </div>
+        <div className="flex gap-2">
+          <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => onNavigate('home')}
+          >
+            Découvrir
+          </button>
+          <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onNavigate('login')}
+          >
+            Connexion
+          </button>
+        </div>
+
       </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={() => onNavigate('home')}
-        >
-          Découvrir
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => onNavigate('login')}
-        >
-          Login
-        </button>
+      <div className="w-full">
+        <button className="btn btn-sm btn-ghost">Technologie</button>
+        <button className="btn btn-sm btn-ghost">Voiture</button>
+        <button className="btn btn-sm btn-ghost">Cuisine</button>
+        <button className="btn btn-sm btn-ghost">Livre</button>
       </div>
     </div>
   )

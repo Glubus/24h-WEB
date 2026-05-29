@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { HomePage } from './components/HomePage'
-import { LoginPage } from './components/LoginPage'
+import { HomePage } from './page/HomePage'
+import { LoginPage } from './page/LoginPage'
 import { Navbar } from './components/Navbar'
 import type { Page } from './types/page'
 import './App.css'

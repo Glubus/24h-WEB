@@ -1,4 +1,5 @@
 import type { Page } from '../types/page'
+import {SmallCardAnnonce} from "../components/SmallCardAnnonce.tsx";
 
 type HomePageProps = {
   onNavigate: (page: Page) => void
@@ -25,6 +26,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             >
               Login
             </button>
+            <SmallCardAnnonce />
           </div>
         </div>
       </div>
