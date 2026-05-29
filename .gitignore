@@ -3,6 +3,8 @@
 **/.DS_Store
 node_modules/
 **/node_modules/
+dist/
+**/dist/
 vendor/
 **/vendor/
 sfapi/public/uploads/
