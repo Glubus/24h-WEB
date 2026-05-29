@@ -19,12 +19,17 @@ jobs:
           set -e
           echo "Running front linters..."
           cd web
+          npm install
           npx eslint
-          npx prettier --check .
+          npm run lint
+          npm run lint:css
+          npm run format:check
           echo "No linter errors in front"
           echo "Running back linters..."
           cd ../sfapi
-          php vendor/bin/php-cs-fixer fix --dry-run --diff
+          composer install
+          composer run lint
+          composer run format:check
           echo "No linter errors in back"
 
   test:
@@ -36,10 +41,11 @@ jobs:
           set -e
           echo "Running front tests..."
           cd web
-          npm test
+          npm install
+          npm run test
           echo "Running back tests..."
           cd ../sfapi
-          php vendor/bin/phpunit --testdox
+          composer run test:coverage
 
   deploy:
     runs-on: ubuntu-latest
