@@ -3,6 +3,10 @@ FROM forge-registry.iut-larochelle.fr/php-fpm-composer/iutlr-info-php8.2-fpm-com
 # Login to container as root user
 USER root
 
+# Image editing dependencies
+RUN apt-get update && apt-get install -y libmagickwand-dev --no-install-recommends && \
+    pecl install imagick && docker-php-ext-enable imagick
+
 # Symfony dev environement 
 ENV APP_ENV=dev
 

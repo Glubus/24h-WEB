@@ -1,0 +1,59 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  HARBOR_REGISTRY_NO_PREFIX: forge-registry.iut-larochelle.fr
+  HARBOR_REGISTRY: forge-registry.iut-larochelle.fr
+  CI_PROJECT: ns-2025-mcheva06
+  IMAGE_NAME: $HARBOR_REGISTRY_NO_PREFIX/$CI_PROJECT/devapi5-server:${CI_COMMIT_SHA}
+  KUBE_CONTEXT: labs-iut-info/labsagent:labsagentiut # A quoi sert cette ligne ?
+  KUBECTL: "kubectl --insecure-skip-tls-verify"
+  K8S_NAMESPACE: ns-mcheva06
+
+.kube-context:
+  before_script:
+  - if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi # Quel est le rôle de ce script ?
+
+build:
+  stage: build
+  tags:
+    - docker
+  before_script:
+    - docker login -u $HARBOR_USER -p $HARBOR_TOKEN $HARBOR_REGISTRY
+    - docker info
+  script:
+    - docker info
+    - "docker build -t $IMAGE_NAME ."
+    - "docker push $IMAGE_NAME"
+
+deploy-cluster:
+  stage: deploy
+  extends: [.kube-context]
+  tags :
+    - docker
+  environment:
+    name: production
+    url: https://ns-mcheva06.labs.iut-larochelle.fr
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"'
+  image:
+    name: forge-registry.iut-larochelle.fr/kubectl/kubectl-envsubst@sha256:a9486590e2463ee4cfe861467f62f9d8d2237a33d08b79f43f5ba29a86e4c8dc # Pourquoi cette image ? // pour utiliser kubectl
+    entrypoint: [""]
+  script:
+    - if ! $KUBECTL get ns | grep $K8S_NAMESPACE ; then $KUBECTL create namespace $K8S_NAMESPACE ; fi # crée le namespace si il n'existe pas
+    - $KUBECTL delete --ignore-not-found=true secret gitlab-auth --namespace=$K8S_NAMESPACE # supprime le secret si il existe
+    - $KUBECTL create secret docker-registry gitlab-auth --docker-server=$HARBOR_REGISTRY_NO_PREFIX --docker-username=$HARBOR_USER --docker-password=$HARBOR_TOKEN --namespace=$K8S_NAMESPACE # crée le secret
+    - $KUBECTL delete --ignore-not-found=true -f k8s/ # supprime le deployment, service et ingress si il existe
+    - cat k8s/pvc.yml | $KUBECTL apply -f - # crée le PVC pour la base de données
+    - cat k8s/deployment-database.yml | envsubst | $KUBECTL apply -f - # applique le déploiement de la base de données
+    - cat k8s/service-database.yml | $KUBECTL apply -f - # applique le service de la base de données
+    - cat k8s/configmap.yml | $KUBECTL apply -f - # applique la configuration nginx
+    - cat k8s/deployment-phpfpm.yml | envsubst | $KUBECTL apply -f - # applique le déploiement PHP-FPM
+    - cat k8s/service-phpfpm.yml | $KUBECTL apply -f - # applique le service PHP-FPM
+    - cat k8s/deployment-nginx.yml | envsubst | $KUBECTL apply -f - # applique le déploiement nginx
+    - cat k8s/service.yml | $KUBECTL apply -f - # applique le service de l'application (nginx)
+    - cat k8s/ingres.yml | $KUBECTL apply -f - # applique l'ingress
+  only:
+    - main
+    - master

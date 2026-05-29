@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: ns-mcheva06
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+        root /app/sfapi/public;
+        index index.php;
+
+        # Gzip compression
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_proxied any;
+        gzip_comp_level 6;
+        gzip_types
+            text/plain
+            text/css
+            text/xml
+            text/javascript
+            application/javascript
+            application/xml+rss
+            application/json;
+
+        # Symfony API Platform configuration
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ ^/index\.php(/|$) {
+            fastcgi_pass devapi5-phpfpm-service:9000;
+            fastcgi_split_path_info ^(.+\.php)(/.*)$;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param DOCUMENT_ROOT $document_root;
+            fastcgi_param SYMFONY_ENV prod;
+            internal;
+        }
+
+        # Deny access to PHP files in uploads and other directories
+        location ~ \.php$ {
+            deny all;
+        }
+
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        error_log /var/log/nginx/sfapi_error.log;
+        access_log /var/log/nginx/sfapi_access.log;
+    }

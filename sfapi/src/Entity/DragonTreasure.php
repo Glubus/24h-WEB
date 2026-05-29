@@ -10,7 +10,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Link;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Carbon\Carbon;
 use Symfony\Component\Serializer\Attribute\SerializedName;
@@ -20,20 +22,35 @@ use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\NumericFilter;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ApiResource(
     description: 'A Dragon Treasure',
     shortName: 'Treasure',
-    uriTemplate: '/my-treasures',
     operations: [
-        new Get(),
-        new GetCollection(),
-        new Post(),
-        new Put(),
-        new Delete(),
+        new GetCollection(uriTemplate: '/treasures'),
+        new Post(uriTemplate: '/treasures', security: 'is_granted("ROLE_TREASURE_CREATE")'),
+        new Get(uriTemplate: '/treasures/{id}'),
+        new Put(uriTemplate: '/treasures/{id}'),
+        new Patch(uriTemplate: '/treasures/{id}', security: 'is_granted("ROLE_TREASURE_EDIT") and object.getUser() == user',
+                                                            securityPostDenormalize: 'object.getUser() == user'),
+        new Delete(uriTemplate: '/treasures/{id}'),
     ],
     normalizationContext: ['groups' => ['treasure:read']],
     denormalizationContext: ['groups' => ['treasure:write']],
+    security: 'is_granted("ROLE_USER")',
+)]
+#[ApiResource(
+   uriTemplate: '/user/{user_id}/treasures.{_format}',
+   shortName: 'Treasure',
+   operations: [
+    new GetCollection(uriTemplate: '/user/{user_id}/treasures'),
+   ],
+   uriVariables: [
+    'user_id' => new Link(fromProperty: 'treasures', fromClass: User::class, toProperty: 'id'),
+   ],
+   normalizationContext: ['groups' => ['treasure:read']],
 )]
 #[ORM\Entity(repositoryClass: DragonTreasureRepository::class)]
 class DragonTreasure
@@ -52,6 +69,7 @@ class DragonTreasure
     #[ORM\Column]
     #[Groups(['treasure:read','treasure:write'])]
     #[ApiFilter(NumericFilter::class)]
+    #[Assert\Positive]
     private ?int $value = null;
 
     #[ORM\Column(length: 255)]
@@ -62,6 +80,7 @@ class DragonTreasure
     #[ORM\Column]
     #[Groups(['treasure:read','treasure:write'])]
     #[ApiFilter(RangeFilter::class)]
+    #[Assert\Range(min: 0, max: 10)]
     private ?int $coolFactor = null;
 
     #[ORM\Column]
@@ -72,6 +91,19 @@ class DragonTreasure
     #[Groups(['treasure:read','treasure:write'])]
     #[ApiFilter(BooleanFilter::class)]
     private ?bool $isPublished = null;
+
+    #[ORM\ManyToOne(inversedBy: 'treasures')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['treasure:read','treasure:write'])]
+    private ?User $user = null;
+
+    #[ORM\Column]
+    #[Groups(['treasure:read','treasure:write'])]
+    private ?int $x = null;
+
+    #[ORM\Column]
+    #[Groups(['treasure:read','treasure:write'])]
+    private ?int $y = null;
 
     public function getId(): ?int
     {
@@ -167,6 +199,42 @@ class DragonTreasure
     public function setTextDescription(string $description): static
     {
         $this->description = nl2br($description);
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    public function getX(): ?int
+    {
+        return $this->x;
+    }
+
+    public function setX(int $x): static
+    {
+        $this->x = $x;
+
+        return $this;
+    }
+
+    public function getY(): ?int
+    {
+        return $this->y;
+    }
+
+    public function setY(int $y): static
+    {
+        $this->y = $y;
 
         return $this;
     }

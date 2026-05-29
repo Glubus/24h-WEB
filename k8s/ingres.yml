@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devapi5-ingress
+  namespace: ns-mcheva06
+spec:
+  ingressClassName: nginx 
+  rules:
+  - host: devapi5-ns-mcheva06.labs.iut-larochelle.fr
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: devapi5-service
+            port:
+              number: 80

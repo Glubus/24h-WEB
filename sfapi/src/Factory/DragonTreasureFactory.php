@@ -45,8 +45,11 @@ final class DragonTreasureFactory extends PersistentProxyObjectFactory
             'createdAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('-25 year', 'now')),
             'description' => self::faker()->paragraphs(2, true),
             'isPublished' => self::faker()->boolean(),
-            'value' => self::faker()->numberBetween(500, 80000000),
+            'value' => self::faker()->numberBetween(500, mt_getrandmax()),
             'name' => self::faker()->randomElement(self::TREASURE_NAME),
+            'user' => UserFactory::new(),
+            'x' => self::faker()->numberBetween(10, 1000),
+            'y' => self::faker()->numberBetween(10, 1000),
         ];
     }
 
