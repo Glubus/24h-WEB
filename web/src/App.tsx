@@ -10,10 +10,16 @@ import './App.css'
 function App() {
   const [page, setPage] = useState<Page>('home')
   const [category, setCategory] = useState<string>('')
+  const [annonceId, setAnnonceId] = useState<number | null>(null)
 
   function navigateToCategory(name: string) {
     setCategory(name)
     setPage('category')
+  }
+
+  function navigateToAnnonce(id: number) {
+    setAnnonceId(id)
+    setPage('annonce')
   }
 
   return (
@@ -21,11 +27,11 @@ function App() {
       <Navbar onNavigate={setPage} onNavigateCategory={navigateToCategory} />
       <div className="px-6 md:px-12 lg:px-24">
         {page === 'home' ? (
-          <HomePage onNavigate={setPage} />
+          <HomePage onNavigate={setPage} onNavigateAnnonce={navigateToAnnonce} />
         ) : page === 'annonce' ? (
-          <AnnoncePage onNavigate={setPage} />
+          <AnnoncePage onNavigate={setPage} annonceId={annonceId} />
         ) : page === 'category' ? (
-          <CategoryPage onNavigate={setPage} category={category} />
+          <CategoryPage onNavigate={setPage} category={category} onNavigateAnnonce={navigateToAnnonce} />
         ) : (
           <LoginPage onNavigate={setPage} />
         )}
