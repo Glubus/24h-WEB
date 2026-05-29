@@ -10,9 +10,10 @@ type ChatPageProps = {
   currentUser: User | null
   initialConversationId: number | null
   onNavigate: (page: Page) => void
+  onNavigateAnnonce: (id: number) => void
 }
 
-export function ChatPage({ currentUser, initialConversationId, onNavigate }: ChatPageProps) {
+export function ChatPage({ currentUser, initialConversationId, onNavigate, onNavigateAnnonce }: ChatPageProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -242,6 +243,9 @@ export function ChatPage({ currentUser, initialConversationId, onNavigate }: Cha
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.map((message) => {
               const isMine = message.author.id === currentUser.id
+              const embeddedAnnonce = message.annonce === null || message.annonce === undefined || typeof message.annonce === 'string'
+                ? null
+                : message.annonce
 
               return (
                 <div key={message.id} className={`chat ${isMine ? 'chat-end' : 'chat-start'}`}>
@@ -253,18 +257,22 @@ export function ChatPage({ currentUser, initialConversationId, onNavigate }: Cha
                   </div>
                   <div className={`chat-bubble ${message.deleted ? 'opacity-60' : ''}`}>
                     {message.content}
-                    {message.annonce === null || message.annonce === undefined || typeof message.annonce === 'string' ? null : (
-                      <div className="mt-3 flex gap-3 rounded bg-base-100/20 p-2 text-sm">
+                    {embeddedAnnonce === null ? null : (
+                      <button
+                        type="button"
+                        className="mt-3 flex w-full gap-3 rounded bg-base-100/20 p-2 text-left text-sm transition hover:bg-base-100/30"
+                        onClick={() => onNavigateAnnonce(embeddedAnnonce.id)}
+                      >
                         <img
                           className="h-14 w-16 rounded object-cover"
-                          src={message.annonce.images.length > 0 ? annonceImageUrl(message.annonce.id) : undefined}
-                          alt={message.annonce.title}
+                          src={embeddedAnnonce.images.length > 0 ? annonceImageUrl(embeddedAnnonce.id) : undefined}
+                          alt={embeddedAnnonce.title}
                         />
                         <div>
-                          <div className="font-semibold">{message.annonce.title}</div>
-                          <div>{message.annonce.price} EUR</div>
+                          <div className="font-semibold">{embeddedAnnonce.title}</div>
+                          <div>{embeddedAnnonce.price} EUR</div>
                         </div>
-                      </div>
+                      </button>
                     )}
                   </div>
                   {message.deleted ? null : (
@@ -277,9 +285,9 @@ export function ChatPage({ currentUser, initialConversationId, onNavigate }: Cha
             })}
           </div>
 
-          <form className="grid gap-2 border-t border-base-300 p-4 md:grid-cols-[1fr_auto_auto]" onSubmit={handleSendMessage}>
+          <form className="flex w-full flex-col gap-2 border-t border-base-300 p-4 md:flex-row" onSubmit={handleSendMessage}>
             <input
-              className="input input-bordered"
+              className="input input-bordered w-full flex-1"
               onChange={(event) => setContent(event.target.value)}
               placeholder="Message"
               value={content}

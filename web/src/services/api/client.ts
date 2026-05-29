@@ -113,6 +113,10 @@ export class ApiPlatformClient {
     return this.postJson<Annonce>(`/annonces/${id}/rate-seller`, { rating })
   }
 
+  purchaseAnnonce(id: ApiId) {
+    return this.postJson<Annonce>(`/annonces/${id}/purchase`, {})
+  }
+
   startConversationFromAnnonce(id: ApiId) {
     return this.postJson<Conversation>(`/annonces/${id}/conversation`, {})
   }

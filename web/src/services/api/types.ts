@@ -46,6 +46,7 @@ export type User = JsonLdResource & {
   id?: number
   email?: string
   username: string
+  roles?: string[]
   phone?: string | null
   profileImagePath?: string | null
   rating?: number | null

@@ -10,11 +10,13 @@ type CreateAnnonceFieldsProps = {
   city: string
   description: string
   imagePreviews: ImagePreview[]
+  imagePickerLabel?: string
   onAddressChange: (value: string) => void
   onCategoryChange: (value: AnnonceCategory) => void
   onCityChange: (value: string) => void
   onDescriptionChange: (value: string) => void
   onImagesChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onDeleteImage?: (image: ImagePreview) => void
   onPriceChange: (value: string) => void
   onTitleChange: (value: string) => void
   price: string
@@ -27,11 +29,13 @@ export function CreateAnnonceFields({
   city,
   description,
   imagePreviews,
+  imagePickerLabel,
   onAddressChange,
   onCategoryChange,
   onCityChange,
   onDescriptionChange,
   onImagesChange,
+  onDeleteImage,
   onPriceChange,
   onTitleChange,
   price,
@@ -81,14 +85,19 @@ export function CreateAnnonceFields({
       <LocationField onChange={onAddressChange} placeholder="Adresse" value={address} />
 
       <textarea
-        className="textarea textarea-bordered min-h-36 bg-base-200/60 md:col-span-2"
+        className="textarea textarea-bordered col-span-full min-h-36 w-full bg-base-200/60"
         onChange={(event) => onDescriptionChange(event.target.value)}
         placeholder="Description"
         required
         value={description}
       />
 
-      <ImagePicker imagePreviews={imagePreviews} onImagesChange={onImagesChange} />
+      <ImagePicker
+        imagePreviews={imagePreviews}
+        label={imagePickerLabel}
+        onDeleteImage={onDeleteImage}
+        onImagesChange={onImagesChange}
+      />
     </div>
   )
 }

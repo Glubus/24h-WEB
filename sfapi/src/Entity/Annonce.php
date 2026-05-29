@@ -18,6 +18,7 @@ use App\State\AnnonceMaskedSwitchProcessor;
 use App\State\AnnonceImageUploadProcessor;
 use App\State\AnnonceImageDeleteProcessor;
 use App\State\AnnonceFavoriteToggleProcessor;
+use App\State\AnnoncePurchaseProcessor;
 use App\State\ConversationFromAnnonceProcessor;
 use App\State\SellerRatingProcessor;
 use App\Repository\AnnonceRepository;
@@ -25,8 +26,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Context;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -51,13 +54,13 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Patch(
             uriTemplate: '/annonces/{id}',
-            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
             securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
             processor: AnnoncePersistProcessor::class,
         ),
         new Delete(
             uriTemplate: '/annonces/{id}',
-            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
         ),
         new Post(
             uriTemplate: '/annonces/{id}/image',
@@ -97,6 +100,13 @@ use Symfony\Component\Validator\Constraints as Assert;
             normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
             security: 'is_granted("ROLE_USER")',
             processor: SellerRatingProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/purchase',
+            deserialize: false,
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            security: 'is_granted("ROLE_USER")',
+            processor: AnnoncePurchaseProcessor::class,
         ),
     ],
     normalizationContext: ['groups' => ['annonce:read']],
@@ -147,6 +157,7 @@ class Annonce
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[Context(denormalizationContext: [AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true])]
     #[ApiFilter(RangeFilter::class)]
     #[Assert\PositiveOrZero]
     private ?string $price = null;
