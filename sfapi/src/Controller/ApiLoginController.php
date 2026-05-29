@@ -20,7 +20,7 @@ final class ApiLoginController extends AbstractController
         ], 401);
        }
 
-       $token=$this->apiTokenHandler->getUserToken($user);
+       $token=$apiTokenHandler->getUserToken($user);
        return $this->json([
         'token' => $token,
         'username' => $user->getUsername(),

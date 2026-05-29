@@ -11,7 +11,6 @@ api_platform:
             mime_types: ['text/yaml']
     defaults:
         stateless: true
-        security: 'is_granted("IS_AUTHENTICATED_FULLY")'
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
     swagger:
@@ -24,4 +23,4 @@ when@test:
     api_platform:
         defaults:
             # Disable auth requirement during tests so existing tests keep passing
-            security: 'is_granted("IS_AUTHENTICATED_FULLY")'
+            stateless: true

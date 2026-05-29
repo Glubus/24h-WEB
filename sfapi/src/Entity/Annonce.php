@@ -3,7 +3,7 @@
 namespace App\Entity;
 
 use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
-use ApiPlatform\Doctrine\Orm\Filter\NumericFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
@@ -12,58 +12,86 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use App\Enum\AnnonceCategory;
+use App\State\AnnonceMaskedSwitchProcessor;
+use App\State\AnnonceImageUploadProcessor;
 use App\Repository\AnnonceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
-        new GetCollection(uriTemplate: '/annonces'),
-        new Post(uriTemplate: '/annonces', security: 'is_granted("ROLE_ANNONCE_CREATE")'),
-        new Get(uriTemplate: '/annonces/{id}'),
-        new Put(uriTemplate: '/annonces/{id}', security: 'is_granted("ROLE_ANNONCE_EDIT") and object.getAuthor() == user'),
-        new Patch(uriTemplate: '/annonces/{id}', security: 'is_granted("ROLE_ANNONCE_EDIT") and object.getAuthor() == user'),
-        new Delete(uriTemplate: '/annonces/{id}', security: 'is_granted("ROLE_ANNONCE_EDIT") and object.getAuthor() == user'),
+        new GetCollection(
+            uriTemplate: '/annonces',
+            normalizationContext: ['groups' => ['annonce:list']],
+        ),
+        new Post(
+            uriTemplate: '/annonces',
+            security: 'is_granted("ROLE_USER")',
+        ),
+        new Get(
+            uriTemplate: '/annonces/{id}',
+            normalizationContext: ['groups' => ['annonce:read']],
+        ),
+        new Patch(
+            uriTemplate: '/annonces/{id}',
+            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+            securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
+        ),
+        new Delete(
+            uriTemplate: '/annonces/{id}',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/image',
+            inputFormats: ['multipart' => ['multipart/form-data']],
+            deserialize: false,
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            processor: AnnonceImageUploadProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/masked',
+            deserialize: false,
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            processor: AnnonceMaskedSwitchProcessor::class,
+        ),
     ],
     normalizationContext: ['groups' => ['annonce:read']],
     denormalizationContext: ['groups' => ['annonce:write']],
-    security: 'is_granted("ROLE_USER")',
 )]
+#[ApiFilter(SearchFilter::class, properties: ['title' => 'ipartial', 'description' => 'ipartial', 'categories' => 'ipartial'])]
 #[ORM\Entity(repositoryClass: AnnonceRepository::class)]
 class Annonce
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['annonce:read'])]
+    #[Groups(['annonce:list', 'annonce:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['annonce:read', 'annonce:write'])]
-    #[ApiFilter(SearchFilter::class, strategy: 'ipartial')]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['annonce:read', 'annonce:write'])]
-    #[ApiFilter(SearchFilter::class, strategy: 'ipartial')]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'annonces')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?User $author = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['annonce:read'])]
+    #[Groups(['annonce:list', 'annonce:read'])]
     private ?string $imagePath = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['annonce:read', 'annonce:write'])]
-    #[ApiFilter(NumericFilter::class)]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[ApiFilter(RangeFilter::class)]
     #[Assert\PositiveOrZero]
     private ?string $price = null;
 
@@ -71,25 +99,25 @@ class Annonce
      * @var list<string>
      */
     #[ORM\Column(type: Types::JSON)]
-    #[Groups(['annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     #[Assert\Choice(callback: [AnnonceCategory::class, 'values'], multiple: true)]
     private array $categories = [];
 
     #[ORM\Column]
-    #[Groups(['annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     #[ApiFilter(BooleanFilter::class)]
     private bool $masked = false;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7)]
-    #[Groups(['annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?string $latitude = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7)]
-    #[Groups(['annonce:read', 'annonce:write'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?string $longitude = null;
 
     #[ORM\Column]
-    #[Groups(['annonce:read'])]
+    #[Groups(['annonce:list', 'annonce:read'])]
     private \DateTimeImmutable $createdAt;
 
     public function __construct()
@@ -117,6 +145,17 @@ class Annonce
     public function getDescription(): ?string
     {
         return $this->description;
+    }
+
+    #[Groups(['annonce:list'])]
+    #[SerializedName('description')]
+    public function getShortDescription(): ?string
+    {
+        if (null === $this->description) {
+            return null;
+        }
+
+        return mb_substr(strip_tags($this->description), 0, 30);
     }
 
     public function setDescription(string $description): static
@@ -199,6 +238,13 @@ class Annonce
     public function setMasked(bool $masked): static
     {
         $this->masked = $masked;
+
+        return $this;
+    }
+
+    public function switchMasket(): static
+    {
+        $this->masked = !$this->masked;
 
         return $this;
     }

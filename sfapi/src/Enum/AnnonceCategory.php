@@ -4,14 +4,10 @@ namespace App\Enum;
 
 enum AnnonceCategory: string
 {
-    case Electronics = 'electronics';
-    case Furniture = 'furniture';
-    case Clothing = 'clothing';
-    case Vehicles = 'vehicles';
-    case RealEstate = 'real_estate';
-    case Services = 'services';
-    case Leisure = 'leisure';
-    case Other = 'other';
+    case Car = 'car';
+    case Electronic = 'electronic';
+    case Sport = 'sport';
+    case Home = 'home';
 
     /**
      * @return list<string>

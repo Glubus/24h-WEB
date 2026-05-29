@@ -21,23 +21,23 @@ security:
                 token_handler: App\Security\ApiTokenHandler
             custom_authenticators:
                 - App\Security\ApiTokenAuthenticator
-            json_login:
-                check_path: api_login
-                username_path: email
-                password_path: password
-                success_handler: App\Security\ApiTokenAuthenticator
-
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
 
             # https://symfony.com/doc/current/security/impersonating_user.html
             # switch_user: true
     role_hierarchy:
-        ROLE_FULL_USER: [ 'ROLE_USER_EDIT', 'ROLE_TREASURE_CREATE', 'ROLE_TREASURE_EDIT' ]
+        ROLE_FULL_USER: [ 'ROLE_USER_EDIT', 'ROLE_ANNONCE_CREATE', 'ROLE_ANNONCE_EDIT' ]
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+        - { path: ^/api/contexts, roles: PUBLIC_ACCESS }
+        - { path: ^/api/annonces/categories$, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/annonces$, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/annonces/[0-9]+$, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 
