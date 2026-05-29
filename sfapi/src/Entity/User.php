@@ -13,6 +13,8 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
+use App\State\CurrentUserProvider;
+use App\State\UserImageUploadProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -21,11 +23,28 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ApiResource(operations: [
     new Get(normalizationContext: ['groups' => ['user:read']]),
-    new Post(denormalizationContext: ['groups' => ['user:write']]),
+    new Get(
+        uriTemplate: '/me',
+        normalizationContext: ['groups' => ['user:read']],
+        security: 'is_granted("ROLE_USER")',
+        provider: CurrentUserProvider::class,
+    ),
+    new Post(
+        normalizationContext: ['groups' => ['user:read']],
+        denormalizationContext: ['groups' => ['user:write']],
+    ),
     new Patch(
         normalizationContext: ['groups' => ['user:read']],
         denormalizationContext: ['groups' => ['user:profile:write']],
         security: 'object == user or is_granted("ROLE_ADMIN")',
+    ),
+    new Post(
+        uriTemplate: '/users/{id}/pictures',
+        inputFormats: ['multipart' => ['multipart/form-data']],
+        deserialize: false,
+        normalizationContext: ['groups' => ['user:read']],
+        security: 'object == user or is_granted("ROLE_ADMIN")',
+        processor: UserImageUploadProcessor::class,
     ),
     new Delete(),
 ])]
@@ -40,6 +59,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
@@ -71,6 +91,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read','user:write','user:profile:write'])]
     #[Assert\Range(min: 0, max: 5)]
     private ?float $rating = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read'])]
+    private ?string $profileImagePath = null;
 
     /**
      * @var Collection<int, ApiToken>
@@ -211,6 +235,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRating(?float $rating): static
     {
         $this->rating = $rating;
+
+        return $this;
+    }
+
+    public function getProfileImagePath(): ?string
+    {
+        return $this->profileImagePath;
+    }
+
+    public function setProfileImagePath(?string $profileImagePath): static
+    {
+        $this->profileImagePath = $profileImagePath;
 
         return $this;
     }

@@ -4,18 +4,18 @@ namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use App\Entity\Annonce;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
- * @implements ProcessorInterface<Annonce, Annonce>
+ * @implements ProcessorInterface<User, User>
  */
-final class AnnonceImageUploadProcessor implements ProcessorInterface
+final class UserImageUploadProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -24,10 +24,10 @@ final class AnnonceImageUploadProcessor implements ProcessorInterface
     ) {
     }
 
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): Annonce
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): User
     {
-        if (!$data instanceof Annonce) {
-            throw new BadRequestHttpException('Annonce not found.');
+        if (!$data instanceof User) {
+            throw new BadRequestHttpException('User not found.');
         }
 
         $request = $context['request'] ?? null;
@@ -44,7 +44,7 @@ final class AnnonceImageUploadProcessor implements ProcessorInterface
             throw new BadRequestHttpException('Uploaded file must be an image.');
         }
 
-        $uploadDir = $this->kernel->getProjectDir().'/public/uploads/annonces';
+        $uploadDir = $this->kernel->getProjectDir().'/public/uploads/users';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0775, true);
         }
@@ -56,7 +56,7 @@ final class AnnonceImageUploadProcessor implements ProcessorInterface
 
         $image->move($uploadDir, $filename);
 
-        $data->addImage('/uploads/annonces/'.$filename);
+        $data->setProfileImagePath('/uploads/users/'.$filename);
         $this->entityManager->flush();
 
         return $data;

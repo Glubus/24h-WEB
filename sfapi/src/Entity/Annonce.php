@@ -16,6 +16,7 @@ use App\Enum\AnnonceCategory;
 use App\State\AnnoncePersistProcessor;
 use App\State\AnnonceMaskedSwitchProcessor;
 use App\State\AnnonceImageUploadProcessor;
+use App\State\AnnonceImageDeleteProcessor;
 use App\Repository\AnnonceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -62,6 +63,11 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
             processor: AnnonceImageUploadProcessor::class,
         ),
+        new Delete(
+            uriTemplate: '/annonces/{id}/images/{imageIndex}',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
+            processor: AnnonceImageDeleteProcessor::class,
+        ),
         new Post(
             uriTemplate: '/annonces/{id}/masked',
             deserialize: false,
@@ -95,9 +101,12 @@ class Annonce
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?User $author = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['annonce:list', 'annonce:read'])]
-    private ?string $imagePath = null;
+    /**
+     * @var list<string>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    private array $images = [];
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['annonce:edit', 'annonce:write'])]
@@ -125,6 +134,15 @@ class Annonce
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     #[ApiFilter(BooleanFilter::class)]
     private bool $masked = false;
+
+    #[ORM\Column]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    #[ApiFilter(BooleanFilter::class)]
+    private bool $sold = false;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
+    private ?\DateTimeImmutable $soldAt = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 7, nullable: true)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
@@ -213,14 +231,39 @@ class Annonce
         return $this;
     }
 
-    public function getImagePath(): ?string
+    /**
+     * @return list<string>
+     */
+    public function getImages(): array
     {
-        return $this->imagePath;
+        return $this->images;
     }
 
-    public function setImagePath(?string $imagePath): static
+    /**
+     * @param list<string> $images
+     */
+    public function setImages(array $images): static
     {
-        $this->imagePath = $imagePath;
+        $this->images = array_values($images);
+
+        return $this;
+    }
+
+    public function addImage(string $image): static
+    {
+        $this->images[] = $image;
+
+        return $this;
+    }
+
+    public function removeImageAt(int $imageIndex): static
+    {
+        if (!array_key_exists($imageIndex, $this->images)) {
+            throw new \OutOfBoundsException('Image index does not exist.');
+        }
+
+        unset($this->images[$imageIndex]);
+        $this->images = array_values($this->images);
 
         return $this;
     }
@@ -305,6 +348,38 @@ class Annonce
     public function switchMasket(): static
     {
         $this->masked = !$this->masked;
+
+        return $this;
+    }
+
+    public function isSold(): bool
+    {
+        return $this->sold;
+    }
+
+    public function setSold(bool $sold): static
+    {
+        if ($sold && !$this->sold && null === $this->soldAt) {
+            $this->soldAt = new \DateTimeImmutable();
+        }
+
+        if (!$sold) {
+            $this->soldAt = null;
+        }
+
+        $this->sold = $sold;
+
+        return $this;
+    }
+
+    public function getSoldAt(): ?\DateTimeImmutable
+    {
+        return $this->soldAt;
+    }
+
+    public function setSoldAt(?\DateTimeImmutable $soldAt): static
+    {
+        $this->soldAt = $soldAt;
 
         return $this;
     }

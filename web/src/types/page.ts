@@ -1,1 +1,1 @@
-export type Page = 'home' | 'login' | 'annonce' | 'category'
+export type Page = 'home' | 'login' | 'register' | 'annonce' | 'category' | 'settingsUser' | 'createAnnonce' | 'chat'

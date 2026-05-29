@@ -1,33 +1,49 @@
 import type { Page } from '../types/page'
-import {SmallCardAccount} from "../components/SmallCardAccount.tsx";
+import { Map } from '../components/Map'
+import { SmallCardAccount } from '../components/SmallCardAccount.tsx'
 
 type AnnoncePageProps = {
   onNavigate: (page: Page) => void
 }
+
+const annonceCoordinates = [
+  {
+    id: 'cafetière-italienne',
+    latitude: 43.610769,
+    longitude: 3.876716,
+    label: 'Cafetière Italienne',
+  },
+]
 
 export function AnnoncePage({ onNavigate }: AnnoncePageProps) {
   return (
       <div className="mt-1">
           <div className="breadcrumbs text-sm">
               <ul>
-                  <li><a>Home</a></li>
+                  <li>
+                      <button type="button" onClick={() => onNavigate('home')}>
+                          Home
+                      </button>
+                  </li>
                   <li><a>Documents</a></li>
                   <li>Add Document</li>
               </ul>
           </div>
           <div className="flex gap-6 mt-10">
-              <div className="flex-1">
+              <div className="h-[650px] flex-1">
                   <img
                       className="rounded-2xl w-full h-full object-cover"
                       src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
                       alt="Shoes"
                   />
               </div>
-              <div className="w-[500px] shrink-0">
+              <div className="flex h-[650px] w-[500px] shrink-0 flex-col">
                   <SmallCardAccount />
                   <h2 className="text-2xl font-bold mt-10">Cafetière Italienne</h2>
                   <p>Description</p>
-                  <p>ICI METTRE LOCALISATION</p>
+                  <div className="mt-6 min-h-0 flex-1 overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm">
+                      <Map coordinates={annonceCoordinates} height="100%" />
+                  </div>
               </div>
           </div>
 

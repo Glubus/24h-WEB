@@ -62,6 +62,7 @@ class AppFixtures extends Fixture
                 'author' => $users[array_rand($users)],
                 'categories' => [$category],
                 'masked' => false,
+                'sold' => false,
             ]);
         }
 
@@ -69,6 +70,7 @@ class AppFixtures extends Fixture
             'author' => $users[array_rand($users)],
             'categories' => [AnnonceCategory::values()[array_rand(AnnonceCategory::values())]],
             'masked' => random_int(0, 4) === 0,
+            'sold' => random_int(0, 5) === 0,
         ]);
 
         $manager->flush();
