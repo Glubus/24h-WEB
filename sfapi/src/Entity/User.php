@@ -12,7 +12,6 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints\UniqueEntity;
@@ -22,10 +21,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ApiResource(operations: [
     new Get(normalizationContext: ['groups' => ['user:read']]),
-    new Post(denormalizationContext: ['groups' => ['user:write']], security: 'is_granted("ROLE_USER_CREATE")'),
-    new Put(security: 'is_granted("ROLE_USER_EDIT")'),
-    new Patch(security: 'is_granted("ROLE_USER_EDIT")'),
-    new Delete(security: 'is_granted("ROLE_USER_DELETE")'),
+    new Post(denormalizationContext: ['groups' => ['user:write']]),
+    new Patch(
+        normalizationContext: ['groups' => ['user:read']],
+        denormalizationContext: ['groups' => ['user:profile:write']],
+        security: 'object == user or is_granted("ROLE_ADMIN")',
+    ),
+    new Delete(),
 ])]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'])]
@@ -33,7 +35,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
 
-    private $accessTokenScopes = [];
+    private ?array $accessTokenScopes = null;
     
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -41,7 +43,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
-    #[Groups(['user:read','user:write'])]
+    #[Groups(['user:read','user:write','user:profile:write'])]
     private ?string $email = null;
 
     /**
@@ -58,15 +60,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read','user:write'])]
+    #[Groups(['user:read','user:write','user:profile:write'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 30, nullable: true)]
-    #[Groups(['user:read','user:write'])]
+    #[Groups(['user:read','user:write','user:profile:write'])]
     private ?string $phone = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['user:read','user:write'])]
+    #[Groups(['user:read','user:write','user:profile:write'])]
     #[Assert\Range(min: 0, max: 5)]
     private ?float $rating = null;
 
@@ -77,12 +79,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $apiTokens;
 
     /**
-     * @var Collection<int, DragonTreasure>
-     */
-    #[ORM\OneToMany(targetEntity: DragonTreasure::class, mappedBy: 'user')]
-    private Collection $treasures;
-
-    /**
      * @var Collection<int, Annonce>
      */
     #[ORM\OneToMany(targetEntity: Annonce::class, mappedBy: 'author', orphanRemoval: true)]
@@ -91,7 +87,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->apiTokens = new ArrayCollection();
-        $this->treasures = new ArrayCollection();
         $this->annonces = new ArrayCollection();
     }
 
@@ -127,12 +122,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getRoles(): array
     {
-        if ($this->accessTokenScopes===null) {
-            $roles = $this->roles;
-            $roles[] = 'ROLE_FULL_USER';
-        }
-        else {
-            $roles = $this->accessTokenScopes;
+        $roles = $this->roles;
+
+        if (null !== $this->accessTokenScopes) {
+            $roles = array_merge($roles, $this->accessTokenScopes);
         }
 
         $roles[] = 'ROLE_USER';
@@ -239,36 +232,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setAccessTokenScopes(?array $scopes): void
     {   
         $this->accessTokenScopes = $scopes;
-    }
-
-    /**
-     * @return Collection<int, DragonTreasure>
-     */
-    public function getTreasures(): Collection
-    {
-        return $this->treasures;
-    }
-
-    public function addTreasure(DragonTreasure $treasure): static
-    {
-        if (!$this->treasures->contains($treasure)) {
-            $this->treasures->add($treasure);
-            $treasure->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeTreasure(DragonTreasure $treasure): static
-    {
-        if ($this->treasures->removeElement($treasure)) {
-            // set the owning side to null (unless already changed)
-            if ($treasure->getUser() === $this) {
-                $treasure->setUser(null);
-            }
-        }
-
-        return $this;
     }
 
     /**

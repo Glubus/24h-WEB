@@ -35,7 +35,7 @@ final class ApiTokenFactory extends PersistentProxyObjectFactory
             // ensure tokens are valid for tests by default
             'expiresAt' => new \DateTimeImmutable('+1 day'),
             'ownedBy' => UserFactory::new(),
-            'scopes' => [ApiToken::SCOPE_USER_EDIT,ApiToken::SCOPE_TREASURE_CREATE],
+            'scopes' => [ApiToken::SCOPE_USER_EDIT, ApiToken::SCOPE_ANNONCE_CREATE],
             // let the entity constructor generate a proper token
         ];
     }

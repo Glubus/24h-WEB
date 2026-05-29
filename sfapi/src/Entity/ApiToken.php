@@ -11,14 +11,10 @@ class ApiToken
     const PERSONAL_ACCESS_TOKEN_PREFIX = "tcp_";
 
     const SCOPE_USER_EDIT = "ROLE_USER_EDIT";
-    const SCOPE_TREASURE_CREATE = "ROLE_TREASURE_CREATE";
-    const SCOPE_TREASURE_EDIT = "ROLE_TREASURE_EDIT";
     const SCOPE_ANNONCE_CREATE = "ROLE_ANNONCE_CREATE";
     const SCOPE_ANNONCE_EDIT = "ROLE_ANNONCE_EDIT";
     const SCOPES  = [
         self::SCOPE_USER_EDIT => "Edit User",
-        self::SCOPE_TREASURE_CREATE => "Create Treasure",
-        self::SCOPE_TREASURE_EDIT => "Edit Treasure",
         self::SCOPE_ANNONCE_CREATE => "Create Annonce",
         self::SCOPE_ANNONCE_EDIT => "Edit Annonce",
     ];
