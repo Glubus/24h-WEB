@@ -27,7 +27,7 @@ jobs:
           echo "No linter errors in front"
           echo "Running back linters..."
           cd ../sfapi
-          composer install
+          composer install --no-scripts
           composer run lint
           composer run format:check
           echo "No linter errors in back"
@@ -45,7 +45,7 @@ jobs:
           npm run test
           echo "Running back tests..."
           cd ../sfapi
-          composer install
+          composer install --no-scripts
           composer run test:coverage
 
   deploy:
