@@ -1,10 +1,9 @@
-name: Build and Deploy
+name: Code Quality
 
 on:
-  push:
+  pull_request:
     branches:
       - master
-      - CI
 
 env:
   CI_PROJECT: 24h-web
@@ -47,18 +46,3 @@ jobs:
           cd ../sfapi
           composer install --no-scripts
           composer run test:coverage
-
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Connect & execute script
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: root
-          port: 22
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd 24h-WEB
-            . install.sh
