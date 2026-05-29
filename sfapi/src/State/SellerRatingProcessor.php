@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
- * @implements ProcessorInterface<Annonce, Annonce>
+ * @implements ProcessorInterface<mixed, Annonce>
  */
 final class SellerRatingProcessor implements ProcessorInterface
 {

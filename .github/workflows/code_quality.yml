@@ -1,0 +1,44 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  CI_PROJECT: 24h-web
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run linters
+        run: |
+          set -e
+          echo "Running front linters..."
+          cd web
+          npm install
+          npx eslint
+          npm run lint
+          npm run lint:css
+          npm run format:check
+          echo "No linter errors in front"
+          echo "Running back linters..."
+          cd ../sfapi
+          composer install --no-scripts
+          composer run lint
+          composer run format:check
+          echo "No linter errors in back"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: |
+          set -e
+          echo "Running front tests..."
+          cd web
+          npm install
+          npm run test

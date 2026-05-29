@@ -9,16 +9,17 @@ use App\Entity\Message;
 use App\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
- * @implements ProcessorInterface<Message, Message>
+ * @implements ProcessorInterface<mixed, mixed>
  */
 final class MessagePersistProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly Security $security,
+        /** @var ProcessorInterface<mixed, mixed> */
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
         private readonly ProcessorInterface $persistProcessor,
     ) {

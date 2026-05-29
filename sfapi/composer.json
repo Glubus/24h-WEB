@@ -77,8 +77,11 @@
         "doctrine:schema:create": "php bin/console doctrine:schema:create",
         "doctrine:schema:update": "php bin/console doctrine:schema:update --force",
         "doctrine:schema:validate": "php bin/console doctrine:schema:validate",
-        "test": "php bin/phpunit",
-        "test:coverage": "php bin/phpunit --coverage-clover coverage/clover.xml"
+        "test": "php bin/phpunit --testdox",
+        "test:coverage": "php bin/phpunit --coverage-clover coverage/clover.xml",
+        "lint": "vendor/bin/phpstan analyse --memory-limit=512M src tests",
+        "format:check": "./vendor/bin/php-cs-fixer check",
+        "format:fix": "./vendor/bin/php-cs-fixer fix"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -90,7 +93,9 @@
         }
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
         "justinrainbow/json-schema": "^6.5",
+        "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^11.5",
         "symfony/browser-kit": "6.4.*",
         "symfony/css-selector": "6.4.*",

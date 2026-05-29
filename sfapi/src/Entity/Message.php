@@ -12,7 +12,6 @@ use App\State\MessagePersistProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ApiResource(
@@ -43,7 +42,7 @@ class Message
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['message:read'])]
-    private ?int $id = null;
+    private int $id = 0;
 
     #[ORM\ManyToOne(inversedBy: 'messages')]
     #[ORM\JoinColumn(nullable: false)]
@@ -78,7 +77,7 @@ class Message
 
     public function getId(): ?int
     {
-        return $this->id;
+        return 0 === $this->id ? null : $this->id;
     }
 
     public function getConversation(): ?Conversation

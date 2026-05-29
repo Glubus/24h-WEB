@@ -2,21 +2,21 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\State\CurrentUserProvider;
+use App\State\UserImageUploadProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Delete;
-use App\State\CurrentUserProvider;
-use App\State\UserImageUploadProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -57,17 +57,18 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(fields: ['username'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-
+    /** @var list<string>|null */
     private ?array $accessTokenScopes = null;
-    
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     #[Groups(['user:read', 'user:summary'])]
+    // @phpstan-ignore-next-line
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
-    #[Groups(['user:read','user:write','user:profile:write'])]
+    #[Groups(['user:read', 'user:write', 'user:profile:write'])]
     private ?string $email = null;
 
     /**
@@ -84,15 +85,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read','user:write','user:profile:write', 'user:summary'])]
+    #[Groups(['user:read', 'user:write', 'user:profile:write', 'user:summary'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 30, nullable: true)]
-    #[Groups(['user:read','user:write','user:profile:write'])]
+    #[Groups(['user:read', 'user:write', 'user:profile:write'])]
     private ?string $phone = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['user:read','user:write','user:profile:write', 'user:summary'])]
+    #[Groups(['user:read', 'user:write', 'user:profile:write', 'user:summary'])]
     #[Assert\Range(min: 0, max: 5)]
     private ?float $rating = null;
 
@@ -182,6 +183,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         $roles[] = 'ROLE_USER';
+
         return array_unique($roles);
     }
 
@@ -294,8 +296,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @param list<string>|null $scopes
+     */
     public function setAccessTokenScopes(?array $scopes): void
-    {   
+    {
         $this->accessTokenScopes = $scopes;
     }
 

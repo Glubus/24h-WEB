@@ -1,7 +1,7 @@
-import { ApiPlatformClient } from './client'
+import { ApiPlatformClient } from "./client";
 
-export { ApiError, ApiPlatformClient } from './client'
-export type { ApiPlatformClientOptions } from './client'
+export { ApiError, ApiPlatformClient } from "./client";
+export type { ApiPlatformClientOptions } from "./client";
 export type {
   Annonce,
   AnnonceCategory,
@@ -24,6 +24,6 @@ export type {
   UpdateAnnoncePayload,
   UpdateUserPayload,
   User,
-} from './types'
+} from "./types";
 
-export const api = new ApiPlatformClient()
+export const api = new ApiPlatformClient();

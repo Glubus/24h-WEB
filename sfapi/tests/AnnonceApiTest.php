@@ -410,6 +410,9 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    /**
+     * @param list<string> $roles
+     */
     #[DataProvider('deleteAllowedProvider')]
     public function testOwnerOrAdminCanDeleteAnnonce(string $case, array $roles, bool $isOwner): void
     {
@@ -555,6 +558,9 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(403);
     }
 
+    /**
+     * @param list<string> $roles
+     */
     #[DataProvider('imageUploadAllowedProvider')]
     public function testAdminOrModeratorCanUploadAnnonceImage(string $case, array $roles): void
     {
@@ -695,6 +701,9 @@ class AnnonceApiTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(400);
     }
 
+    /**
+     * @param list<string> $expectedTitles
+     */
     #[DataProvider('collectionFilterProvider')]
     public function testCollectionFilters(string $queryString, array $expectedTitles): void
     {
@@ -766,7 +775,7 @@ class AnnonceApiTest extends ApiTestCase
     /**
      * @param list<string> $scopes
      *
-     * @return array{array<string, string>, string, object}
+     * @return array{array<string, string>, string, User}
      */
     private function authenticatedHeadersAndUserIri(array $scopes): array
     {

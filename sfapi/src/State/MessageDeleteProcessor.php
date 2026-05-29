@@ -8,7 +8,7 @@ use App\Entity\Message;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * @implements ProcessorInterface<Message, Message>
+ * @implements ProcessorInterface<mixed, null>
  */
 final class MessageDeleteProcessor implements ProcessorInterface
 {
@@ -16,6 +16,9 @@ final class MessageDeleteProcessor implements ProcessorInterface
     {
     }
 
+    /**
+     * @return null
+     */
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
         if (!$data instanceof Message) {

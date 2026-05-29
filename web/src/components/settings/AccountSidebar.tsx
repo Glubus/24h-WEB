@@ -1,16 +1,16 @@
-import type { ChangeEvent } from 'react'
-import type { User } from '../../services/api'
-import { formatUsername } from '../../utils/formatUsername'
+import type { ChangeEvent } from "react";
+import type { User } from "../../services/api";
+import { formatUsername } from "../../utils/formatUsername";
 
-export type AccountSection = 'dashboard' | 'settings'
+export type AccountSection = "dashboard" | "settings";
 
 type AccountSidebarProps = {
-  activeSection: AccountSection
-  onImageChange: (event: ChangeEvent<HTMLInputElement>) => void
-  onSectionChange: (section: AccountSection) => void
-  profileImage: string | null
-  user: User
-}
+  activeSection: AccountSection;
+  onImageChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSectionChange: (section: AccountSection) => void;
+  profileImage: string | null;
+  user: User;
+};
 
 export function AccountSidebar({
   activeSection,
@@ -19,7 +19,7 @@ export function AccountSidebar({
   profileImage,
   user,
 }: AccountSidebarProps) {
-  const displayUsername = formatUsername(user.username)
+  const displayUsername = formatUsername(user.username);
 
   return (
     <aside className="rounded-lg border border-base-300 bg-base-100 p-6">
@@ -37,7 +37,12 @@ export function AccountSidebar({
         </div>
         <label className="btn btn-outline btn-sm mt-4">
           Changer l'image
-          <input accept="image/*" className="hidden" onChange={onImageChange} type="file" />
+          <input
+            accept="image/*"
+            className="hidden"
+            onChange={onImageChange}
+            type="file"
+          />
         </label>
         <h1 className="mt-4 text-2xl font-bold">{displayUsername}</h1>
         <p className="text-sm text-base-content/60">{user.email}</p>
@@ -47,23 +52,23 @@ export function AccountSidebar({
       <ul className="menu gap-1">
         <li>
           <button
-            className={activeSection === 'dashboard' ? 'active' : ''}
+            className={activeSection === "dashboard" ? "active" : ""}
             type="button"
-            onClick={() => onSectionChange('dashboard')}
+            onClick={() => onSectionChange("dashboard")}
           >
             Dashboard
           </button>
         </li>
         <li>
           <button
-            className={activeSection === 'settings' ? 'active' : ''}
+            className={activeSection === "settings" ? "active" : ""}
             type="button"
-            onClick={() => onSectionChange('settings')}
+            onClick={() => onSectionChange("settings")}
           >
             Paramètres
           </button>
         </li>
       </ul>
     </aside>
-  )
+  );
 }

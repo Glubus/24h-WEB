@@ -3,18 +3,17 @@ FROM forge-registry.iut-larochelle.fr/php-fpm-composer/iutlr-info-php8.2-fpm-com
 # Login to container as root user
 USER root
 
-# Image editing dependencies
-RUN apt-get update && apt-get install -y libmagickwand-dev --no-install-recommends && \
-    pecl install imagick && docker-php-ext-enable imagick
-
-# Symfony dev environement 
+# Symfony dev environement
 ENV APP_ENV=dev
 
 # Copy php default configuration
 COPY ./build/sfapi/conf/default.ini /usr/local/etc/php/conf.d/default.ini
 
 # Set working directory
-WORKDIR /app 
+WORKDIR /app
+
+# Copy application source so Composer can access composer.json during build
+COPY ./sfapi ./sfapi
 
 # Arguments defined in compose.yml
 ARG USER_NAME
@@ -30,5 +29,9 @@ RUN if [ ! -z ${USER_NAME} ] && [ ! -z ${GROUP_NAME} ] && [ ${USER_ID:-0} -ne 0 
     chown -R ${USER_NAME}:${GROUP_NAME} /app \
     ; fi
 
-# Login to container as non-root user 
+# Login to container as non-root user
 USER ${USER_ID:-0}:${GROUP_ID:-0}
+
+WORKDIR /app/sfapi
+
+RUN composer install --no-scripts
