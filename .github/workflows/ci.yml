@@ -18,7 +18,7 @@ jobs:
         run: |
           set -e
           echo "Running front linters..."
-          cd 24h-WEB/web
+          ls -la
           npx eslint
           npx prettier --check .
           echo "No linter errors in front"
@@ -34,6 +34,7 @@ jobs:
       - name: Run tests
         run: |
           set -e
+          ls -la
           echo "Running front tests..."
           cd 24h-WEB/web
           npm test
