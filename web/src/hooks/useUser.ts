@@ -21,21 +21,37 @@ export function useUser(source: ApiId | ApiIri | User | null | undefined) {
     : extractId(source as ApiId | ApiIri | null | undefined)
 
   useEffect(() => {
-    if (source !== null && typeof source === 'object') {
-      setUser(source as User)
-      return
-    }
-    if (id === null) {
-      setUser(null)
-      return
-    }
+    let cancelled = false
 
-    setLoading(true)
-    setError(null)
-    api.getUser(id)
-      .then(result => setUser(result))
-      .catch(err => setError(err))
-      .finally(() => setLoading(false))
+    void (async () => {
+      if (source !== null && typeof source === 'object') {
+        setUser(source as User)
+        setLoading(false)
+        return
+      }
+
+      if (id === null) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await api.getUserSummary(id)
+        if (!cancelled) setUser(result)
+      } catch (err) {
+        if (!cancelled) setError(err as Error)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [id, source])
 
   return { user, loading, error }

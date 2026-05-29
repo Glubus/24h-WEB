@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
 import type { User } from '../../services/api'
+import { formatUsername } from '../../utils/formatUsername'
 
 export type AccountSection = 'dashboard' | 'settings'
 
@@ -18,6 +19,8 @@ export function AccountSidebar({
   profileImage,
   user,
 }: AccountSidebarProps) {
+  const displayUsername = formatUsername(user.username)
+
   return (
     <aside className="rounded-lg border border-base-300 bg-base-100 p-6">
       <div className="flex flex-col items-center text-center">
@@ -28,7 +31,7 @@ export function AccountSidebar({
                 {user.username.charAt(0).toUpperCase()}
               </div>
             ) : (
-              <img src={profileImage} alt={user.username} />
+              <img src={profileImage} alt={displayUsername} />
             )}
           </div>
         </div>
@@ -36,7 +39,7 @@ export function AccountSidebar({
           Changer l'image
           <input accept="image/*" className="hidden" onChange={onImageChange} type="file" />
         </label>
-        <h1 className="mt-4 text-2xl font-bold">{user.username}</h1>
+        <h1 className="mt-4 text-2xl font-bold">{displayUsername}</h1>
         <p className="text-sm text-base-content/60">{user.email}</p>
       </div>
 

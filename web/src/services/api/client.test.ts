@@ -149,6 +149,19 @@ describe('ApiPlatformClient', () => {
     expect(lastFetchCall()[0]).toBe(`${apiBaseUrl}/annonces/categories`)
   })
 
+  it('gets public user summaries without sending bearer token', async () => {
+    const client = new ApiPlatformClient({ baseUrl: apiBaseUrl, token: 'token-123' })
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 5, username: 'seller', rating: 4.5 }))
+
+    await client.getUserSummary(5)
+    const [url, init] = lastFetchCall()
+    const headers = requestHeaders(init)
+
+    expect(url).toBe(`${apiBaseUrl}/users/5/summary`)
+    expect(init?.method).toBe('GET')
+    expect(headers.has('Authorization')).toBe(false)
+  })
+
   it('deletes annonces and accepts empty 204 responses', async () => {
     const client = new ApiPlatformClient({ baseUrl: apiBaseUrl, token: 'token-123' })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }))

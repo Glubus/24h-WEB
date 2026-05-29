@@ -1,13 +1,14 @@
 import { SmallCardAnnonce } from "./SmallCardAnnonce.tsx";
 import { useAnnonces } from '../hooks/useAnnonces'
-import type { AnnonceCategory } from '../services/api'
+import type { AnnonceCategory, User } from '../services/api'
 
 type CategorySmallAnnonceCardProps = {
     category: AnnonceCategory
+    currentUser: User | null
     onNavigateAnnonce: (id: number) => void
 }
 
-export function CategorySmallAnnonceCard({ category, onNavigateAnnonce }: CategorySmallAnnonceCardProps) {
+export function CategorySmallAnnonceCard({ category, currentUser, onNavigateAnnonce }: CategorySmallAnnonceCardProps) {
     const { annonces, loading, error } = useAnnonces(category)
 
     return (
@@ -19,9 +20,14 @@ export function CategorySmallAnnonceCard({ category, onNavigateAnnonce }: Catego
                 {annonces.map(annonce => (
                     <div className="carousel-item" key={annonce.id}>
                         <SmallCardAnnonce
+                            author={annonce.author}
+                            createdAt={annonce.createdAt}
+                            currentUserId={currentUser?.id}
+                            favorites={annonce.favorites}
+                            id={annonce.id}
                             title={annonce.title}
                             price={annonce.price}
-                            imagePath={annonce.imagePath}
+                            images={annonce.images}
                             city={annonce.city}
                             onClick={() => onNavigateAnnonce(annonce.id)}
                         />

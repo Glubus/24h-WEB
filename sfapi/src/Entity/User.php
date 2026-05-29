@@ -24,6 +24,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(operations: [
     new Get(normalizationContext: ['groups' => ['user:read']]),
     new Get(
+        uriTemplate: '/users/{id}/summary',
+        normalizationContext: ['groups' => ['user:summary']],
+    ),
+    new Get(
         uriTemplate: '/me',
         normalizationContext: ['groups' => ['user:read']],
         security: 'is_granted("ROLE_USER")',
@@ -59,7 +63,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:summary'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
@@ -80,7 +84,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read','user:write','user:profile:write'])]
+    #[Groups(['user:read','user:write','user:profile:write', 'user:summary'])]
     private ?string $username = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -88,12 +92,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $phone = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['user:read','user:write','user:profile:write'])]
+    #[Groups(['user:read','user:write','user:profile:write', 'user:summary'])]
     #[Assert\Range(min: 0, max: 5)]
     private ?float $rating = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:summary'])]
     private ?string $profileImagePath = null;
 
     /**
@@ -107,6 +111,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\OneToMany(targetEntity: Annonce::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $annonces;
+
+    /**
+     * @var Collection<int, Annonce>
+     */
+    #[ORM\OneToMany(targetEntity: Annonce::class, mappedBy: 'buyer')]
+    #[Groups(['user:read'])]
+    private Collection $purchasedAnnonces;
 
     /**
      * @var Collection<int, Annonce>
@@ -126,6 +137,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->apiTokens = new ArrayCollection();
         $this->annonces = new ArrayCollection();
+        $this->purchasedAnnonces = new ArrayCollection();
         $this->ratedAnnonces = new ArrayCollection();
         $this->favoriteAnnonces = new ArrayCollection();
     }
@@ -160,6 +172,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see UserInterface
      */
+    #[Groups(['user:read'])]
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -294,6 +307,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->annonces;
     }
 
+    #[Groups(['user:read', 'user:summary'])]
+    public function getSuccessfulSaleCount(): int
+    {
+        return $this->annonces->filter(static fn (Annonce $annonce): bool => $annonce->isSold())->count();
+    }
+
     public function addAnnonce(Annonce $annonce): static
     {
         if (!$this->annonces->contains($annonce)) {
@@ -309,6 +328,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->annonces->removeElement($annonce)) {
             if ($annonce->getAuthor() === $this) {
                 $annonce->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Annonce>
+     */
+    public function getPurchasedAnnonces(): Collection
+    {
+        return $this->purchasedAnnonces;
+    }
+
+    public function addPurchasedAnnonce(Annonce $annonce): static
+    {
+        if (!$this->purchasedAnnonces->contains($annonce)) {
+            $this->purchasedAnnonces->add($annonce);
+            $annonce->setBuyer($this);
+        }
+
+        return $this;
+    }
+
+    public function removePurchasedAnnonce(Annonce $annonce): static
+    {
+        if ($this->purchasedAnnonces->removeElement($annonce)) {
+            if ($annonce->getBuyer() === $this) {
+                $annonce->setBuyer(null);
             }
         }
 

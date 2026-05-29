@@ -19,6 +19,32 @@ class ChatApiTest extends ApiTestCase
 
     protected static ?bool $alwaysBootKernel = false;
 
+    public function testConversationCanBeStartedFromAnnonce(): void
+    {
+        $client = static::createClient();
+        $buyer = UserFactory::createOne(['username' => 'buyer']);
+        $seller = UserFactory::createOne(['username' => 'seller']);
+        $annonce = AnnonceFactory::createOne(['author' => $seller]);
+        $token = ApiTokenFactory::createOne(['ownedBy' => $buyer]);
+
+        $firstResponse = $client->request('POST', '/api/annonces/'.$annonce->getId().'/conversation', [
+            'headers' => $this->jsonHeaders($token),
+            'json' => [],
+        ])->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame($buyer->getId(), $firstResponse['userOne']['id']);
+        $this->assertSame($seller->getId(), $firstResponse['userTwo']['id']);
+
+        $secondResponse = $client->request('POST', '/api/annonces/'.$annonce->getId().'/conversation', [
+            'headers' => $this->jsonHeaders($token),
+            'json' => [],
+        ])->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame($firstResponse['id'], $secondResponse['id']);
+    }
+
     public function testUserCanCreateConversationAndSendMessageWithAnnonceEmbed(): void
     {
         $client = static::createClient();

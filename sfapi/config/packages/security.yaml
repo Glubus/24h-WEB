@@ -37,7 +37,9 @@ security:
         - { path: ^/api/annonces/categories$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/annonces$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/annonces/[0-9]+$, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/annonces/[0-9]+/images/[0-9]+$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/users$, roles: PUBLIC_ACCESS, methods: [POST] }
+        - { path: ^/api/users/[0-9]+/summary$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/users/[0-9]+/pictures$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
         # - { path: ^/admin, roles: ROLE_ADMIN }
