@@ -3,9 +3,13 @@
 namespace App\Tests;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
+use App\Entity\Annonce;
+use App\Entity\User;
+use App\Factory\AnnonceFactory;
 use App\Factory\UserFactory;
 use App\Factory\ApiTokenFactory;
 use App\Entity\ApiToken;
+use Doctrine\ORM\EntityManagerInterface;
 use Zenstruck\Foundry\Test\Factories;
 use Zenstruck\Foundry\Test\ResetDatabase;
 
@@ -108,6 +112,34 @@ class UserTest extends ApiTestCase
         $this->assertArrayNotHasKey('password', $data);
         $this->assertArrayNotHasKey('apiTokens', $data);
         $this->assertArrayNotHasKey('accessTokenScopes', $data);
+    }
+
+    public function testUserReadShowsRatedAndFavoriteAnnonces(): void
+    {
+        $user = UserFactory::createOne();
+        $ratedAnnonce = AnnonceFactory::createOne(['title' => 'Rated annonce']);
+        $favoriteAnnonce = AnnonceFactory::createOne(['title' => 'Favorite annonce']);
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $managedUser = $entityManager->find(User::class, $user->getId());
+        $managedRatedAnnonce = $entityManager->find(Annonce::class, $ratedAnnonce->getId());
+        $managedFavoriteAnnonce = $entityManager->find(Annonce::class, $favoriteAnnonce->getId());
+        $managedRatedAnnonce->addRating($managedUser);
+        $managedFavoriteAnnonce->addFavorite($managedUser);
+        $entityManager->flush();
+
+        $token = ApiTokenFactory::createOne([
+            'ownedBy' => $user,
+            'scopes' => [ApiToken::SCOPE_USER_EDIT],
+        ]);
+
+        $response = static::createClient()->request('GET', '/api/users/'.$user->getId(), [
+            'headers' => $this->authorizationHeaders($token),
+        ]);
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame(['/api/annonces/'.$ratedAnnonce->getId()], $data['ratedAnnonces']);
+        $this->assertSame(['/api/annonces/'.$favoriteAnnonce->getId()], $data['favoriteAnnonces']);
     }
 
     public function testUserProfilePatchRequiresToken(): void

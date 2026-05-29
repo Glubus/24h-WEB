@@ -17,6 +17,8 @@ use App\State\AnnoncePersistProcessor;
 use App\State\AnnonceMaskedSwitchProcessor;
 use App\State\AnnonceImageUploadProcessor;
 use App\Repository\AnnonceRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -136,9 +138,27 @@ class Annonce
     #[Groups(['annonce:list', 'annonce:read'])]
     private \DateTimeImmutable $createdAt;
 
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'ratedAnnonces')]
+    #[ORM\JoinTable(name: 'annonce_rating')]
+    #[Groups(['annonce:read', 'annonce:edit'])]
+    private Collection $ratings;
+
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'favoriteAnnonces')]
+    #[ORM\JoinTable(name: 'annonce_favorite')]
+    #[Groups(['annonce:read', 'annonce:edit'])]
+    private Collection $favorites;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->ratings = new ArrayCollection();
+        $this->favorites = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -321,6 +341,60 @@ class Annonce
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getRatings(): Collection
+    {
+        return $this->ratings;
+    }
+
+    public function addRating(User $user): static
+    {
+        if (!$this->ratings->contains($user)) {
+            $this->ratings->add($user);
+            $user->addRatedAnnonce($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRating(User $user): static
+    {
+        if ($this->ratings->removeElement($user)) {
+            $user->removeRatedAnnonce($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getFavorites(): Collection
+    {
+        return $this->favorites;
+    }
+
+    public function addFavorite(User $user): static
+    {
+        if (!$this->favorites->contains($user)) {
+            $this->favorites->add($user);
+            $user->addFavoriteAnnonce($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFavorite(User $user): static
+    {
+        if ($this->favorites->removeElement($user)) {
+            $user->removeFavoriteAnnonce($this);
+        }
 
         return $this;
     }
