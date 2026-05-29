@@ -10,7 +10,34 @@ env:
   CI_PROJECT: 24h-web
 
 jobs:
-  restart-server:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run linters
+        run: |
+          echo "Running front linters..."
+          cd web
+          npx eslint
+          npx prettier --check .
+          echo "No linter errors in front"
+          echo "Running back linters..."
+          cd ../sfapi
+          php vendor/bin/php-cs-fixer fix --dry-run --diff
+          echo "No linter errors in back"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run tests
+        run: |
+          echo "Running front tests..."
+          cd web
+          npm test
+          echo "Running back tests..."
+          cd ../sfapi
+          php vendor/bin/phpunit --testdox
+
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Connect & execute script
