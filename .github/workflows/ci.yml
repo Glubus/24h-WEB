@@ -22,4 +22,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+            cd 24h-WEB
             . install.sh
