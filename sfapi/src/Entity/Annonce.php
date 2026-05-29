@@ -17,6 +17,9 @@ use App\State\AnnoncePersistProcessor;
 use App\State\AnnonceMaskedSwitchProcessor;
 use App\State\AnnonceImageUploadProcessor;
 use App\State\AnnonceImageDeleteProcessor;
+use App\State\AnnonceFavoriteToggleProcessor;
+use App\State\ConversationFromAnnonceProcessor;
+use App\State\SellerRatingProcessor;
 use App\Repository\AnnonceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -30,7 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             uriTemplate: '/annonces',
-            normalizationContext: ['groups' => ['annonce:list']],
+            normalizationContext: ['groups' => ['annonce:list', 'user:summary']],
         ),
         new Post(
             uriTemplate: '/annonces',
@@ -39,16 +42,16 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             uriTemplate: '/annonces/{id}',
-            normalizationContext: ['groups' => ['annonce:read']],
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
         ),
         new Get(
             uriTemplate: '/annonces/{id}/edit',
             normalizationContext: ['groups' => ['annonce:read', 'annonce:edit']],
-            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
         ),
         new Patch(
             uriTemplate: '/annonces/{id}',
-            security: 'object.getAuthor() == user or is_granted("ROLE_ADMIN")',
+            security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
             securityPostDenormalize: 'previous_object.getAuthor() == object.getAuthor()',
             processor: AnnoncePersistProcessor::class,
         ),
@@ -73,6 +76,27 @@ use Symfony\Component\Validator\Constraints as Assert;
             deserialize: false,
             security: 'object.getAuthor() == user or is_granted("ROLE_MODERATOR") or is_granted("ROLE_ADMIN")',
             processor: AnnonceMaskedSwitchProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/conversation',
+            deserialize: false,
+            normalizationContext: ['groups' => ['conversation:read', 'user:read']],
+            security: 'is_granted("ROLE_USER")',
+            processor: ConversationFromAnnonceProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/favorite',
+            deserialize: false,
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            security: 'is_granted("ROLE_USER")',
+            processor: AnnonceFavoriteToggleProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/annonces/{id}/rate-seller',
+            deserialize: false,
+            normalizationContext: ['groups' => ['annonce:read', 'user:summary']],
+            security: 'is_granted("ROLE_USER")',
+            processor: SellerRatingProcessor::class,
         ),
     ],
     normalizationContext: ['groups' => ['annonce:read']],
@@ -100,6 +124,11 @@ class Annonce
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['annonce:list', 'annonce:read', 'annonce:write'])]
     private ?User $author = null;
+
+    #[ORM\ManyToOne(inversedBy: 'purchasedAnnonces')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:edit', 'annonce:write'])]
+    private ?User $buyer = null;
 
     /**
      * @var list<string>
@@ -169,7 +198,7 @@ class Annonce
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'favoriteAnnonces')]
     #[ORM\JoinTable(name: 'annonce_favorite')]
-    #[Groups(['annonce:read', 'annonce:edit'])]
+    #[Groups(['annonce:list', 'annonce:read', 'annonce:edit'])]
     private Collection $favorites;
 
     public function __construct()
@@ -227,6 +256,18 @@ class Annonce
     public function setAuthor(?User $author): static
     {
         $this->author = $author;
+
+        return $this;
+    }
+
+    public function getBuyer(): ?User
+    {
+        return $this->buyer;
+    }
+
+    public function setBuyer(?User $buyer): static
+    {
+        $this->buyer = $buyer;
 
         return $this;
     }
@@ -365,6 +406,7 @@ class Annonce
 
         if (!$sold) {
             $this->soldAt = null;
+            $this->buyer = null;
         }
 
         $this->sold = $sold;
@@ -453,6 +495,12 @@ class Annonce
     public function getFavorites(): Collection
     {
         return $this->favorites;
+    }
+
+    #[Groups(['annonce:list', 'annonce:read'])]
+    public function getFavoriteCount(): int
+    {
+        return $this->favorites->count();
     }
 
     public function addFavorite(User $user): static

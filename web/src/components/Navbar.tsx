@@ -1,7 +1,8 @@
 import type { Page } from '../types/page'
 import type { User } from '../services/api'
-import { apiAssetUrl } from '../services/api/assets'
+import { userPictureUrl } from '../services/api/assets'
 import { useCategories } from '../hooks/useCategories'
+import { formatUsername } from '../utils/formatUsername'
 
 type NavbarProps = {
   currentUser: User | null
@@ -12,8 +13,8 @@ type NavbarProps = {
 
 export function Navbar({ currentUser, onLogout, onNavigate, onNavigateCategory }: NavbarProps) {
   const initial = currentUser?.username.charAt(0).toUpperCase() ?? '?'
-  const profileImageUrl = currentUser === null ? null : userPictureUrl(currentUser)
-export function Navbar({ onNavigate, onNavigateCategory }: NavbarProps) {
+  const displayUsername = formatUsername(currentUser?.username)
+  const profileImageUrl = currentUser?.id === undefined ? null : userPictureUrl(currentUser.id)
   const { categories } = useCategories()
 
   return (
@@ -75,10 +76,10 @@ export function Navbar({ onNavigate, onNavigateCategory }: NavbarProps) {
               <button type="button" className="btn btn-ghost gap-2" tabIndex={0}>
                 <div className={`avatar ${profileImageUrl === null ? 'placeholder' : ''}`}>
                   <div className="w-9 rounded-full bg-primary text-primary-content">
-                    {profileImageUrl === null ? <span>{initial}</span> : <img src={profileImageUrl} alt={currentUser.username} />}
+                    {profileImageUrl === null ? <span>{initial}</span> : <img src={profileImageUrl} alt={displayUsername} />}
                   </div>
                 </div>
-                <span className="hidden max-w-32 truncate md:inline">{currentUser.username}</span>
+                <span className="hidden max-w-32 truncate md:inline">{displayUsername}</span>
               </button>
               <ul
                 className="menu dropdown-content z-[1] mt-3 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow"
@@ -112,12 +113,4 @@ export function Navbar({ onNavigate, onNavigateCategory }: NavbarProps) {
       </div>
     </div>
   )
-}
-
-function userPictureUrl(user: User) {
-  if (user.id === undefined || user.profileImagePath === null || user.profileImagePath === undefined) {
-    return null
-  }
-
-  return apiAssetUrl(`/users/${user.id}/pictures`)
 }

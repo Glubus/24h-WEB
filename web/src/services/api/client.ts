@@ -64,11 +64,11 @@ export class ApiPlatformClient {
   }
 
   listAnnonces(filters: AnnonceFilters = {}) {
-    return this.get<ApiCollection<AnnonceListItem>>(`/annonces${this.toAnnonceQuery(filters)}`)
+    return this.get<ApiCollection<AnnonceListItem>>(`/annonces${this.toAnnonceQuery(filters)}`, { authenticated: false })
   }
 
   getAnnonce(id: ApiId) {
-    return this.get<Annonce>(`/annonces/${id}`)
+    return this.get<Annonce>(`/annonces/${id}`, { authenticated: false })
   }
 
   getAnnonceForEdit(id: ApiId) {
@@ -105,8 +105,20 @@ export class ApiPlatformClient {
     return this.postJson<Annonce>(`/annonces/${id}/masked`, {})
   }
 
+  toggleAnnonceFavorite(id: ApiId) {
+    return this.postJson<Annonce>(`/annonces/${id}/favorite`, {})
+  }
+
+  rateAnnonceSeller(id: ApiId, rating: number) {
+    return this.postJson<Annonce>(`/annonces/${id}/rate-seller`, { rating })
+  }
+
+  startConversationFromAnnonce(id: ApiId) {
+    return this.postJson<Conversation>(`/annonces/${id}/conversation`, {})
+  }
+
   listAnnonceCategories() {
-    return this.get<ApiCollection<AnnonceCategoryResource>>('/annonces/categories')
+    return this.get<ApiCollection<AnnonceCategoryResource>>('/annonces/categories', { authenticated: false })
   }
 
   listConversations() {
@@ -133,6 +145,10 @@ export class ApiPlatformClient {
     return this.get<User>(`/users/${id}`)
   }
 
+  getUserSummary(id: ApiId) {
+    return this.get<User>(`/users/${id}/summary`, { authenticated: false })
+  }
+
   createUser(payload: CreateUserPayload) {
     return this.postJson<User>('/users', payload)
   }
@@ -155,8 +171,8 @@ export class ApiPlatformClient {
     return this.delete<void>(`/users/${id}`)
   }
 
-  private get<T>(path: string) {
-    return this.request<T>(path, { method: 'GET' })
+  private get<T>(path: string, options: { authenticated?: boolean } = {}) {
+    return this.request<T>(path, { method: 'GET' }, options)
   }
 
   private delete<T>(path: string) {
@@ -189,10 +205,10 @@ export class ApiPlatformClient {
     })
   }
 
-  private async request<T>(path: string, init: RequestInit) {
+  private async request<T>(path: string, init: RequestInit, options: { authenticated?: boolean } = {}) {
     const response = await fetch(this.url(path), {
       ...init,
-      headers: this.headers(init.headers),
+      headers: this.headers(init.headers, options),
     })
 
     if (!response.ok) {
@@ -207,14 +223,14 @@ export class ApiPlatformClient {
     return (await this.readResponse(response)) as T
   }
 
-  private headers(initHeaders?: HeadersInit) {
+  private headers(initHeaders?: HeadersInit, options: { authenticated?: boolean } = {}) {
     const headers = new Headers(initHeaders)
 
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/ld+json')
     }
 
-    if (this.token !== null) {
+    if (options.authenticated !== false && this.token !== null) {
       headers.set('Authorization', `Bearer ${this.token}`)
     }
 

@@ -438,6 +438,36 @@ class AnnonceApiTest extends ApiTestCase
         ], $data['images']);
     }
 
+    public function testAnnonceImageCanBeReadThroughApiRoute(): void
+    {
+        $annonce = AnnonceFactory::createOne();
+        $projectDir = static::getContainer()->getParameter('kernel.project_dir');
+        $uploadDir = $projectDir.'/public/uploads/annonces';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+
+        $filename = 'test-annonce-image-'.bin2hex(random_bytes(4)).'.txt';
+        $path = $uploadDir.'/'.$filename;
+        file_put_contents($path, 'annonce-image-content');
+
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $managedAnnonce = $entityManager->find(Annonce::class, $annonce->getId());
+        $managedAnnonce->setImages(['/uploads/annonces/'.$filename]);
+        $entityManager->flush();
+
+        try {
+            $response = static::createClient()->request('GET', '/api/annonces/'.$annonce->getId().'/images/0');
+
+            $this->assertResponseIsSuccessful();
+            $this->assertSame('annonce-image-content', $response->getContent());
+        } finally {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+    }
+
     public function testNonOwnerCannotUploadAnnonceImage(): void
     {
         [$headers] = $this->authenticatedHeadersAndUserIri([]);
@@ -532,6 +562,63 @@ class AnnonceApiTest extends ApiTestCase
         ]);
 
         $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testUserCanToggleAnnonceFavorite(): void
+    {
+        [$headers, , $user] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne(['author' => UserFactory::createOne()]);
+
+        static::createClient()->request('POST', '/api/annonces/'.$annonce->getId().'/favorite', [
+            'headers' => $headers,
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'favoriteCount' => 1,
+            'favorites' => [['@id' => '/api/users/'.$user->getId()]],
+        ]);
+
+        static::createClient()->request('POST', '/api/annonces/'.$annonce->getId().'/favorite', [
+            'headers' => $headers,
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'favoriteCount' => 0,
+            'favorites' => [],
+        ]);
+    }
+
+    public function testUserCanRateAnnonceSeller(): void
+    {
+        [$headers, , $rater] = $this->authenticatedHeadersAndUserIri([]);
+        $seller = UserFactory::createOne(['rating' => 3]);
+        $annonce = AnnonceFactory::createOne(['author' => $seller]);
+
+        static::createClient()->request('POST', '/api/annonces/'.$annonce->getId().'/rate-seller', [
+            'headers' => $headers,
+            'json' => ['rating' => 4.5],
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'ratings' => [['@id' => '/api/users/'.$rater->getId()]],
+            'author' => ['rating' => 4.5],
+        ]);
+    }
+
+    public function testOwnerCannotRateOwnAnnonceSeller(): void
+    {
+        [$headers, , $owner] = $this->authenticatedHeadersAndUserIri([]);
+        $annonce = AnnonceFactory::createOne(['author' => $owner]);
+
+        static::createClient()->request('POST', '/api/annonces/'.$annonce->getId().'/rate-seller', [
+            'headers' => $headers,
+            'json' => ['rating' => 5],
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
     }
 
     #[DataProvider('collectionFilterProvider')]

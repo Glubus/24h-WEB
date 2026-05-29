@@ -8,12 +8,25 @@ export function useAnnonces(category?: string) {
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    api.listAnnonces(category ? { categories: category as never } : {})
-      .then(result => setAnnonces(result.member))
-      .catch(err => setError(err))
-      .finally(() => setLoading(false))
+    let cancelled = false
+
+    void (async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await api.listAnnonces(category ? { categories: category as never } : {})
+        if (!cancelled) setAnnonces(result.member)
+      } catch (err) {
+        if (!cancelled) setError(err as Error)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [category])
 
   return { annonces, loading, error }

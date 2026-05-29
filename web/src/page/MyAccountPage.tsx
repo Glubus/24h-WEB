@@ -6,7 +6,7 @@ import { AccountSidebar } from '../components/settings/AccountSidebar'
 import type { AccountSection } from '../components/settings/AccountSidebar'
 import { api } from '../services/api'
 import type { AnnonceListItem, User } from '../services/api'
-import { apiAssetUrl } from '../services/api/assets'
+import { userPictureUrl } from '../services/api/assets'
 import type { Page } from '../types/page'
 
 type MyAccountPageProps = {
@@ -21,7 +21,7 @@ export function MyAccountPage({ currentUser, onNavigate, onUserChange }: MyAccou
   const [username, setUsername] = useState(currentUser?.username ?? '')
   const [phone, setPhone] = useState(currentUser?.phone ?? '')
   const [profileImage, setProfileImage] = useState<string | null>(() =>
-    currentUser === null ? null : userPictureUrl(currentUser),
+    currentUser?.id === undefined ? null : userPictureUrl(currentUser.id),
   )
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -90,10 +90,10 @@ export function MyAccountPage({ currentUser, onNavigate, onUserChange }: MyAccou
 
   function hydrateUser(nextUser: User) {
     setUser(nextUser)
-    setEmail(nextUser.email)
+    setEmail(nextUser.email ?? '')
     setUsername(nextUser.username)
     setPhone(nextUser.phone ?? '')
-    setProfileImage(userPictureUrl(nextUser))
+    setProfileImage(nextUser.id === undefined ? null : userPictureUrl(nextUser.id))
     setIsLoading(false)
   }
 
@@ -270,12 +270,4 @@ function salesByWeek(annonces: AnnonceListItem[]) {
     ...week,
     percent: (week.count / maxCount) * 100,
   }))
-}
-
-function userPictureUrl(user: User) {
-  if (user.id === undefined || user.profileImagePath === null || user.profileImagePath === undefined) {
-    return null
-  }
-
-  return apiAssetUrl(`/users/${user.id}/pictures`)
 }

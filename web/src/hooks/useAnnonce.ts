@@ -8,17 +8,31 @@ export function useAnnonce(id: ApiId | null) {
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    if (id === null) {
-      setAnnonce(null)
-      return
-    }
+    let cancelled = false
 
-    setLoading(true)
-    setError(null)
-    api.getAnnonce(id)
-      .then(result => setAnnonce(result))
-      .catch(err => setError(err))
-      .finally(() => setLoading(false))
+    void (async () => {
+      if (id === null) {
+        setAnnonce(null)
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await api.getAnnonce(id)
+        if (!cancelled) setAnnonce(result)
+      } catch (err) {
+        if (!cancelled) setError(err as Error)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [id])
 
   return { annonce, loading, error }

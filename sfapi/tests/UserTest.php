@@ -86,6 +86,27 @@ class UserTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
+    public function testUserSummaryIsPublicAndDoesNotExposePrivateFields(): void
+    {
+        $user = UserFactory::createOne([
+            'email' => 'summary@example.com',
+            'phone' => '+33123456789',
+            'rating' => 4.5,
+            'username' => 'summary-user',
+        ]);
+
+        $response = static::createClient()->request('GET', '/api/users/'.$user->getId().'/summary');
+        $data = $response->toArray();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame($user->getId(), $data['id']);
+        $this->assertSame('summary-user', $data['username']);
+        $this->assertSame(4.5, $data['rating']);
+        $this->assertArrayHasKey('successfulSaleCount', $data);
+        $this->assertArrayNotHasKey('email', $data);
+        $this->assertArrayNotHasKey('phone', $data);
+    }
+
     public function testWhoamiRequiresToken(): void
     {
         static::createClient()->request('GET', '/api/me');

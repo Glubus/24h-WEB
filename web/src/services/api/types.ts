@@ -44,12 +44,14 @@ export type LoginResponse = {
 
 export type User = JsonLdResource & {
   id?: number
-  email: string
+  email?: string
   username: string
   phone?: string | null
   profileImagePath?: string | null
   rating?: number | null
+  successfulSaleCount?: number
   annonces?: ApiIri[]
+  purchasedAnnonces?: ApiIri[]
   ratedAnnonces?: ApiIri[]
   favoriteAnnonces?: ApiIri[]
   userIdentifier?: string
@@ -95,6 +97,9 @@ export type AnnonceListItem = JsonLdResource & {
   title: string
   description: string
   author: ApiIri | User
+  buyer?: ApiIri | User | null
+  favoriteCount?: number
+  favorites?: ApiIri[] | User[]
   images: string[]
   city?: string | null
   price: string
@@ -109,7 +114,6 @@ export type AnnonceListItem = JsonLdResource & {
 
 export type Annonce = AnnonceListItem & {
   ratings?: ApiIri[] | User[]
-  favorites?: ApiIri[] | User[]
 }
 
 export type AnnonceEdit = Annonce & {
@@ -120,6 +124,7 @@ export type CreateAnnoncePayload = {
   title: string
   description: string
   author: ApiIri
+  buyer?: ApiIri | null
   address?: string | null
   city?: string | null
   price: string | number
