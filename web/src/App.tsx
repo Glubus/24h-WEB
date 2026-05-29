@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { HomePage } from './page/HomePage'
 import { LoginPage } from './page/LoginPage'
 import { RegisterPage } from './page/RegisterPage'
@@ -6,11 +6,15 @@ import { AnnoncePage } from './page/AnnoncePage'
 import { CategoryPage } from './page/CategoryPage'
 import { SearchResultPage } from './page/SearchResultPage'
 import { MyAccountPage } from './page/MyAccountPage'
+import { MyAnnoncesPage } from './page/MyAnnoncesPage'
 import { CreateAnnoncePage } from './page/CreateAnnoncePage'
 import { ChatPage } from './page/ChatPage'
+import { PaymentPage } from './page/PaymentPage'
 import { Navbar } from './components/Navbar'
-import { api } from './services/api'
+import { FloatingChat } from './components/FloatingChat'
+import { ApiError, api } from './services/api'
 import type { User } from './services/api'
+import { clearCachedCurrentUser, readCachedCurrentUser, writeCachedCurrentUser } from './services/api/currentUserCache'
 import type { Page } from './types/page'
 import './App.css'
 
@@ -18,10 +22,49 @@ function App() {
   const [page, setPage] = useState<Page>('home')
   const [category, setCategory] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const token = localStorage.getItem('api_token')
+
+    return token === null ? null : readCachedCurrentUser(token)
+  })
   const [chatConversationId, setChatConversationId] = useState<number | null>(null)
+  const [editingAnnonceId, setEditingAnnonceId] = useState<number | null>(null)
+  const [paymentAnnonceId, setPaymentAnnonceId] = useState<number | null>(null)
 
   const [annonceId, setAnnonceId] = useState<number | null>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem('api_token')
+
+    if (token === null) {
+      return
+    }
+
+    let isCurrent = true
+    api.setToken(token)
+    api
+      .whoami()
+      .then((user) => {
+        if (isCurrent) {
+          setCurrentUser(user)
+          writeCachedCurrentUser(token, user)
+        }
+      })
+      .catch((restoreError) => {
+        if (isCurrent) {
+          if (isAuthenticationRejected(restoreError)) {
+            api.setToken(null)
+            localStorage.removeItem('api_token')
+            clearCachedCurrentUser()
+            setCurrentUser(null)
+          }
+        }
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
 
   function navigateToCategory(name: string) {
     setCategory(name)
@@ -37,13 +80,50 @@ function App() {
   function handleLogout() {
     api.setToken(null)
     localStorage.removeItem('api_token')
+    clearCachedCurrentUser()
     setCurrentUser(null)
     setPage('home')
+  }
+
+  function handleCurrentUserChange(user: User | null) {
+    setCurrentUser(user)
+
+    const token = api.getToken() ?? localStorage.getItem('api_token')
+
+    if (user === null || token === null) {
+      clearCachedCurrentUser()
+      return
+    }
+
+    writeCachedCurrentUser(token, user)
   }
 
   function navigateToAnnonce(id: number) {
     setAnnonceId(id)
     setPage('annonce')
+  }
+
+  async function discoverRandomAnnonce() {
+    const response = await api.listAnnonces({ masked: false, sold: false })
+    const annonces = response.member
+
+    if (annonces.length === 0) {
+      setPage('home')
+      return
+    }
+
+    const randomAnnonce = annonces[Math.floor(Math.random() * annonces.length)]
+    navigateToAnnonce(randomAnnonce.id)
+  }
+
+  function navigateToEditAnnonce(id: number) {
+    setEditingAnnonceId(id)
+    setPage('createAnnonce')
+  }
+
+  function navigateToPayment(id: number) {
+    setPaymentAnnonceId(id)
+    setPage('payment')
   }
 
   function navigateToChat(conversationId: number) {
@@ -55,6 +135,9 @@ function App() {
     <>
       <Navbar
         currentUser={currentUser}
+        onDiscover={() => {
+          void discoverRandomAnnonce()
+        }}
         onLogout={handleLogout}
         onNavigate={setPage}
         onNavigateCategory={navigateToCategory}
@@ -64,25 +147,57 @@ function App() {
         {page === 'home' ? (
           <HomePage currentUser={currentUser} onNavigate={setPage} onNavigateAnnonce={navigateToAnnonce} />
         ) : page === 'annonce' ? (
-          <AnnoncePage currentUser={currentUser} onNavigate={setPage} onNavigateChat={navigateToChat} annonceId={annonceId} />
+          <AnnoncePage
+            currentUser={currentUser}
+            onNavigate={setPage}
+            onEditAnnonce={navigateToEditAnnonce}
+            onNavigateCategory={navigateToCategory}
+            onNavigateChat={navigateToChat}
+            onPayAnnonce={navigateToPayment}
+            annonceId={annonceId}
+          />
         ) : page === 'category' ? (
           <CategoryPage currentUser={currentUser} onNavigate={setPage} category={category} onNavigateAnnonce={navigateToAnnonce} />
         ) : page === 'register' ? (
           <RegisterPage onNavigate={setPage} />
         ) : page === 'settingsUser' ? (
-          <MyAccountPage currentUser={currentUser} onNavigate={setPage} onUserChange={setCurrentUser} />
+          <MyAccountPage currentUser={currentUser} onNavigate={setPage} onUserChange={handleCurrentUserChange} />
+        ) : page === 'myAnnonces' ? (
+          <MyAnnoncesPage currentUser={currentUser} onNavigate={setPage} onNavigateAnnonce={navigateToAnnonce} />
         ) : page === 'createAnnonce' ? (
-          <CreateAnnoncePage currentUser={currentUser} onNavigate={setPage} />
-        ) : page === 'chat' ? (
-          <ChatPage currentUser={currentUser} initialConversationId={chatConversationId} onNavigate={setPage} />
+          <CreateAnnoncePage
+            currentUser={currentUser}
+            editingAnnonceId={editingAnnonceId}
+            onNavigate={setPage}
+            onSavedAnnonce={navigateToAnnonce}
+          />
         ) : page === 'search' ? (
             <SearchResultPage currentUser={currentUser} onNavigate={setPage} query={searchQuery} onNavigateAnnonce={navigateToAnnonce} />
+        ) : page === 'chat' ? (
+          <ChatPage
+            currentUser={currentUser}
+            initialConversationId={chatConversationId}
+            onNavigate={setPage}
+            onNavigateAnnonce={navigateToAnnonce}
+          />
+        ) : page === 'payment' ? (
+          <PaymentPage
+            annonceId={paymentAnnonceId}
+            currentUser={currentUser}
+            onNavigate={setPage}
+            onPaid={navigateToAnnonce}
+          />
         ) : (
-          <LoginPage onLogin={setCurrentUser} onNavigate={setPage} />
+          <LoginPage onLogin={handleCurrentUserChange} onNavigate={setPage} />
         )}
       </div>
+      <FloatingChat onNavigateAnnonce={navigateToAnnonce} />
     </>
   )
+}
+
+function isAuthenticationRejected(error: unknown) {
+  return error instanceof ApiError && (error.status === 401 || error.status === 403)
 }
 
 export default App
