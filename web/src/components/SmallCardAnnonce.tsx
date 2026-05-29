@@ -1,7 +1,7 @@
 
 export function SmallCardAnnonce() {
     return (
-        <div className="card bg-base-100 w-[220px]">
+        <div className="card bg-base-200 w-[220px]">
             <figure>
                 <div className={"relative"}>
                     <img
