@@ -1,3 +1,4 @@
+import { Heart } from 'lucide-react'
 import type { Page } from '../types/page'
 import { CategorySmallAnnonceCard } from '../components/CategorySmallAnnonceCard.tsx'
 import { Map as ListingMap } from '../components/Map'
@@ -13,7 +14,11 @@ type HomePageProps = {
 
 export function HomePage({ currentUser, onNavigateAnnonce }: HomePageProps) {
   const { annonces, loading, error } = useAnnonces({ masked: false })
+  const currentUserId = currentUser?.id
   const availableAnnonces = annonces.filter((annonce) => !annonce.sold)
+  const favoriteAnnonces = currentUserId === undefined
+    ? []
+    : availableAnnonces.filter((annonce) => relationContainsUser(annonce.favorites, currentUserId))
   const bestSellerAnnonces = bestSellerListings(availableAnnonces)
   const coordinates = availableAnnonces.map((annonce) => ({
     id: annonce.id,
@@ -68,6 +73,40 @@ export function HomePage({ currentUser, onNavigateAnnonce }: HomePageProps) {
               </div>
             )}
           </div>
+          {currentUserId === undefined ? null : (
+            <div>
+              <h2 className="mb-4 inline-flex items-center gap-2 text-xl font-semibold">
+                <Heart className="h-5 w-5 text-secondary" />
+                <span>Mes favoris</span>
+              </h2>
+              {favoriteAnnonces.length > 0 ? (
+                <div className="carousel w-full gap-7">
+                  {favoriteAnnonces.map((annonce) => (
+                    <div className="carousel-item" key={annonce.id}>
+                      <SmallCardAnnonce
+                        author={annonce.author}
+                        city={annonce.city}
+                        createdAt={annonce.createdAt}
+                        currentUserId={currentUserId}
+                        favorites={annonce.favorites}
+                        id={annonce.id}
+                        images={annonce.images}
+                        masked={annonce.masked}
+                        onClick={() => onNavigateAnnonce(annonce.id)}
+                        price={annonce.price}
+                        sold={annonce.sold}
+                        title={annonce.title}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-base-300 bg-base-100 p-6 text-sm text-base-content/60">
+                  Aucune annonce en favori pour le moment.
+                </div>
+              )}
+            </div>
+          )}
           <CategorySmallAnnonceCard category="car" currentUser={currentUser} onNavigateAnnonce={onNavigateAnnonce} />
           <CategorySmallAnnonceCard category="electronic" currentUser={currentUser} onNavigateAnnonce={onNavigateAnnonce} />
           <CategorySmallAnnonceCard category="sport" currentUser={currentUser} onNavigateAnnonce={onNavigateAnnonce} />
@@ -123,4 +162,14 @@ function bestSellerListings(annonces: AnnonceListItem[]) {
 
     return topSellerIds.has(annonce.author.id)
   })
+}
+
+function relationContainsUser(users: AnnonceListItem['favorites'], userId: number) {
+  return users?.some((user) => {
+    if (typeof user === 'string') {
+      return user.endsWith(`/users/${userId}`)
+    }
+
+    return user.id === userId
+  }) ?? false
 }

@@ -1,4 +1,4 @@
-import { RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
+import { Heart, RotateCcw, Search, SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Page } from '../types/page'
@@ -31,11 +31,18 @@ const emptyFilters: CategoryFilterValues = {
 export function CategoryPage({ currentUser, category, onNavigateAnnonce }: CategoryPageProps) {
     const [draftFilters, setDraftFilters] = useState<CategoryFilterValues>(emptyFilters)
     const [appliedFilters, setAppliedFilters] = useState<CategoryFilterValues>(emptyFilters)
+    const isFavoritesCategory = category === 'favorites'
+    const currentUserId = currentUser?.id
     const apiFilters = useMemo(
         () => buildAnnonceFilters(category, appliedFilters),
         [appliedFilters, category],
     )
     const { annonces, loading, error } = useAnnonces(apiFilters)
+    const visibleAnnonces = isFavoritesCategory
+        ? currentUserId === undefined
+            ? []
+            : annonces.filter((annonce) => relationContainsUser(annonce.favorites, currentUserId))
+        : annonces
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -56,11 +63,20 @@ export function CategoryPage({ currentUser, category, onNavigateAnnonce }: Categ
                             <CategoryDisplay category={category} iconClassName="h-7 w-7" />
                         </h1>
                         <p className="mt-1 text-sm text-base-content/60">
-                            Filtrez les annonces avec les filtres Symfony.
+                            {isFavoritesCategory
+                                ? 'Vos annonces favorites, avec les mêmes filtres.'
+                                : 'Filtrez les annonces disponibles.'}
                         </p>
                     </div>
                     {loading ? <span className="loading loading-spinner loading-sm" /> : null}
                 </div>
+
+                {isFavoritesCategory && currentUserId === undefined ? (
+                    <div className="alert">
+                        <Heart className="h-5 w-5" />
+                        <span>Connectez-vous pour voir vos favoris.</span>
+                    </div>
+                ) : null}
 
                 <form className="rounded-lg border border-base-300 bg-base-100 p-4 shadow-sm" onSubmit={handleSubmit}>
                     <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-base-content/70">
@@ -121,7 +137,7 @@ export function CategoryPage({ currentUser, category, onNavigateAnnonce }: Categ
             {loading && <span className="loading loading-spinner loading-lg" />}
             {error && <p className="text-error">Erreur lors du chargement des annonces.</p>}
             <div className="flex flex-wrap gap-4">
-                {annonces.map(annonce => (
+                {visibleAnnonces.map(annonce => (
                         <SmallCardAnnonce
                             key={annonce.id}
                             author={annonce.author}
@@ -139,9 +155,9 @@ export function CategoryPage({ currentUser, category, onNavigateAnnonce }: Categ
                         />
                 ))}
             </div>
-            {!loading && !error && annonces.length === 0 ? (
+            {!loading && !error && visibleAnnonces.length === 0 ? (
                 <p className="mt-6 rounded-lg border border-base-300 bg-base-100 p-6 text-base-content/70">
-                    Aucune annonce ne correspond à ces filtres.
+                    {isFavoritesCategory ? 'Aucune annonce favorite ne correspond à ces filtres.' : 'Aucune annonce ne correspond à ces filtres.'}
                 </p>
             ) : null}
         </div>
@@ -164,11 +180,21 @@ function buildAnnonceFilters(category: string, filters: CategoryFilterValues): A
     }
 
     return {
-        categories: category as AnnonceCategory,
+        ...(category === 'favorites' ? {} : { categories: category as AnnonceCategory }),
         masked: false,
         sold: false,
         ...(title.length > 0 ? { title } : {}),
         ...(description.length > 0 ? { description } : {}),
         ...(Object.keys(price).length > 0 ? { price } : {}),
     }
+}
+
+function relationContainsUser(users: User[] | string[] | undefined, userId: number) {
+    return users?.some((user) => {
+        if (typeof user === 'string') {
+            return user.endsWith(`/users/${userId}`)
+        }
+
+        return user.id === userId
+    }) ?? false
 }

@@ -1,7 +1,7 @@
-import { Car, Dumbbell, Home, Laptop, Tag } from 'lucide-react'
+import { Car, Dumbbell, Heart, Home, Laptop, Tag } from 'lucide-react'
 import type { ComponentType } from 'react'
 import type { AnnonceCategory } from '../services/api'
-import { categoryLabel } from '../utils/categoryLabels'
+import { categoryLabel, type DisplayCategory } from '../utils/categoryLabels'
 
 type CategoryDisplayProps = {
   category: AnnonceCategory | string
@@ -9,9 +9,10 @@ type CategoryDisplayProps = {
   iconClassName?: string
 }
 
-const categoryIcons: Partial<Record<AnnonceCategory, ComponentType<{ className?: string }>>> = {
+const categoryIcons: Partial<Record<DisplayCategory, ComponentType<{ className?: string }>>> = {
   car: Car,
   electronic: Laptop,
+  favorites: Heart,
   sport: Dumbbell,
   home: Home,
 }

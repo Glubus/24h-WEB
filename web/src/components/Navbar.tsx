@@ -18,6 +18,7 @@ export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNaviga
   const displayUsername = formatUsername(currentUser?.username)
   const profileImageUrl = currentUser?.id === undefined ? null : userPictureUrl(currentUser.id)
   const { categories } = useCategories()
+  const displayCategories = currentUser === null ? categories : ['favorites', ...categories]
 
   return (
     <div className="navbar bg-base-100 border-b border-base-300 flex-col items-stretch px-6 md:px-12 lg:px-24 sticky top-0 z-50">
@@ -108,7 +109,7 @@ export function Navbar({ currentUser, onDiscover, onLogout, onNavigate, onNaviga
         </div>
       </div>
       <div className="w-full">
-        {categories.map(category => (
+        {displayCategories.map(category => (
           <button
             key={category}
             className="btn btn-sm btn-ghost"

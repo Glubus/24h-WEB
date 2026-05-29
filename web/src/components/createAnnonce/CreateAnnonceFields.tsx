@@ -85,7 +85,7 @@ export function CreateAnnonceFields({
       <LocationField onChange={onAddressChange} placeholder="Adresse" value={address} />
 
       <textarea
-        className="textarea textarea-bordered min-h-36 bg-base-200/60 md:col-span-2"
+        className="textarea textarea-bordered col-span-full min-h-36 w-full bg-base-200/60"
         onChange={(event) => onDescriptionChange(event.target.value)}
         placeholder="Description"
         required
